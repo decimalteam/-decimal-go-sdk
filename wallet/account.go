@@ -156,7 +156,10 @@ func (acc *Account) SignTransaction(tx auth.StdTx) (auth.StdTx, error) {
 	}
 
 	// Retrieve transaction bytes required to sign
-	bytesToSign := auth.StdSignBytes(acc.chainID, uint64(acc.accountNumber), uint64(acc.sequence), tx.Fee, tx.Msgs, tx.Memo)
+	bytesToSign := auth.StdSignBytes(
+		acc.chainID, uint64(acc.accountNumber), uint64(acc.sequence),
+		tx.Fee, tx.Msgs, tx.Memo,
+	)
 
 	// Sign bytes prepared to sign
 	signatureBytes, err := acc.privateKeyTM.Sign(bytesToSign)

@@ -28,7 +28,7 @@ const (
 	testCoin               = "tdel"
 	testTxHash             = "16B3284DD7ADCCCE74109A713B87D134C92089A0759297551BA2D4B4DA558B40"
 
-	hugeGas = 16 * 1024
+	hugeGas = uint64(16 * 1024)
 )
 
 var api *decapi.API
@@ -169,20 +169,35 @@ func exampleBroadcastMsgSendCoin() {
 
 	// Prepare transaction arguments
 	msgs := []sdk.Msg{msg}
-	fee := auth.NewStdFee(hugeGas, sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0))))
+	feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
 	memo := ""
 	if words, _ := diceware.Generate(rand.Int() % 16); len(words) > 0 {
 		memo = strings.Join(words, " ")
 	}
 
-	// Create and sign transaction
-	tx := account.CreateTransaction(msgs, fee, memo)
-	tx, err = account.SignTransaction(tx)
-	if err != nil {
-		panic(err)
-	}
+	// Declare transaction variable
+	var tx auth.StdTx
 
-	// TODO: Estimate and adjust amount of gas wanted for the transaction
+	// Adjust gas until it is equal to gasEstimated
+	for gas, gasEstimated := hugeGas, uint64(0); gas != gasEstimated; {
+		if gasEstimated != 0 {
+			gas = gasEstimated
+		}
+
+		// Create and sign transaction
+		fee := auth.NewStdFee(gas, feeCoins)
+		tx = account.CreateTransaction(msgs, fee, memo)
+		tx, err = account.SignTransaction(tx)
+		if err != nil {
+			panic(err)
+		}
+
+		// Estimate and adjust amount of gas wanted for the transaction
+		gasEstimated, err = api.EstimateTransactionGasWanted(tx)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	// Broadcast signed transaction
 	broadcastTxResult, err := api.BroadcastTransactionJSON(tx)

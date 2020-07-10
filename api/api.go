@@ -15,8 +15,9 @@ import (
 	"bitbucket.org/decimalteam/go-node/x/validator"
 )
 
-// LatestBlockHeight is value should be used as latest block height value.
-const LatestBlockHeight = 0
+// BaseCoinSymbol is symbol of base coin in the network.
+// TODO: Request it from a gateway instead?
+const BaseCoinSymbol = "tdel"
 
 // API is a struct implementing Decimal API iteraction.
 type API struct {
