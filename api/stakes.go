@@ -16,7 +16,7 @@ type StakesResponse struct {
 
 // StakesResult contains API response fields.
 type StakesResult struct {
-	ValidatorID uint64           `json:"validatorId"`
+	ValidatorID string           `json:"validatorId"`
 	TotalStake  string           `json:"totalStake"`
 	Validator   *ValidatorResult `json:"validator"`
 	Stakes      []*Stake         `json:"stakes"`
