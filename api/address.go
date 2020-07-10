@@ -54,17 +54,6 @@ func (api *API) Address(address string) (*AddressResult, error) {
 	return response.Result.Address, nil
 }
 
-// Balance requests balance of specified address.
-func (api *API) Balance(address string) (map[string]string, error) {
-
-	response, err := api.Address(address)
-	if err != nil {
-		return nil, err
-	}
-
-	return response.Balance, nil
-}
-
 // AccountNumberAndSequence requests account number and current sequence (nonce) of specified address.
 func (api *API) AccountNumberAndSequence(address string) (uint64, uint64, error) {
 

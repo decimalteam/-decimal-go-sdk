@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
@@ -80,6 +81,7 @@ func NewAccountFromMnemonic(mnemonic *Mnemonic) (*Account, error) {
 
 	// Calculate address from private key
 	address := privateKey.PublicKey().AddressString()
+	fmt.Println(address)
 
 	// Create and return account
 	result := &Account{
@@ -92,6 +94,24 @@ func NewAccountFromMnemonic(mnemonic *Mnemonic) (*Account, error) {
 	}
 
 	return result, nil
+}
+
+// WithChainID sets chain ID of network.
+func (acc *Account) WithChainID(chainID string) *Account {
+	acc.chainID = chainID
+	return acc
+}
+
+// WithAccountNumber sets accounts's number.
+func (acc *Account) WithAccountNumber(accountNumber uint64) *Account {
+	acc.accountNumber = int64(accountNumber)
+	return acc
+}
+
+// WithSequence sets accounts's sequence (last used nonce).
+func (acc *Account) WithSequence(sequence uint64) *Account {
+	acc.sequence = int64(sequence)
+	return acc
 }
 
 // PrivateKey returns accounts's private key.
@@ -109,32 +129,14 @@ func (acc *Account) ChainID() string {
 	return acc.chainID
 }
 
-// WithChainID sets chain ID of network.
-func (acc *Account) WithChainID(chainID string) *Account {
-	acc.chainID = chainID
-	return acc
-}
-
 // AccountNumber returns accounts's number.
 func (acc *Account) AccountNumber() int64 {
 	return acc.accountNumber
 }
 
-// WithAccountNumber sets accounts's number.
-func (acc *Account) WithAccountNumber(accountNumber uint64) *Account {
-	acc.accountNumber = int64(accountNumber)
-	return acc
-}
-
 // Sequence returns accounts's sequence (last used nonce).
 func (acc *Account) Sequence() int64 {
 	return acc.sequence
-}
-
-// WithSequence sets accounts's sequence (last used nonce).
-func (acc *Account) WithSequence(sequence uint64) *Account {
-	acc.sequence = int64(sequence)
-	return acc
 }
 
 // CreateTransaction creates new transaction with specified messages and parameters.

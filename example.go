@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/sethvargo/go-diceware/diceware"
 
@@ -22,6 +23,7 @@ const (
 	testMnemonicPassphrase = ""
 	testSenderAddress      = "dx12k95ukkqzjhkm9d94866r4d9fwx7tsd82r8pjd"
 	testReceiverAddress    = "dx1yzxrvpj807dzs5mapwpu77zuh4669lltjheqvv"
+	testStakesMakerAddress = "dx1dqx544dw3gfc2q2n0yv0ghdsjq79zlaf9uflht"
 	testValidatorAddress   = "dxvaloper16rr3cvdgj8jsywhx8lfteunn9uz0xg2czw6gx5"
 	testCoin               = "tdel"
 	testTxHash             = "16B3284DD7ADCCCE74109A713B87D134C92089A0759297551BA2D4B4DA558B40"
@@ -39,6 +41,7 @@ var err error
 ////////////////////////////////////////////////////////////////
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
 
 	// Create Decimal API instance
 	api = decapi.NewAPI(hostURL)
@@ -92,13 +95,6 @@ func exampleRequests() {
 	}
 	printAsJSON("Address response", address)
 
-	// Request balance of the address
-	balance, err := api.Balance(testSenderAddress)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Balance response", balance)
-
 	// Request information about all coins
 	coins, err := api.Coins()
 	if err != nil {
@@ -113,6 +109,13 @@ func exampleRequests() {
 		panic(err)
 	}
 	printAsJSON(fmt.Sprintf("Coin %s response", symbol), coin)
+
+	// Request information about transaction with specific hash
+	tx, err := api.Transaction(testTxHash)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Transaction response", tx)
 
 	// Request information about all candidates
 	candidates, err := api.Candidates()
@@ -135,12 +138,12 @@ func exampleRequests() {
 	}
 	printAsJSON("Validator response", validator)
 
-	// Request information about transaction with specific hash
-	tx, err := api.Transaction(testTxHash)
+	// Request information about stakes from the account with specific address
+	stakes, err := api.Stakes(testStakesMakerAddress)
 	if err != nil {
 		panic(err)
 	}
-	printAsJSON("Transaction response", tx)
+	printAsJSON("Stakes response", stakes)
 }
 
 ////////////////////////////////////////////////////////////////
@@ -182,11 +185,11 @@ func exampleBroadcastMsgSendCoin() {
 	// TODO: Estimate and adjust amount of gas wanted for the transaction
 
 	// Broadcast signed transaction
-	sendTxResult, err := api.SendTransactionJSON(tx)
+	broadcastTxResult, err := api.BroadcastTransactionJSON(tx)
 	if err != nil {
 		panic(err)
 	}
-	printAsJSON("Sent transaction in JSON format response", sendTxResult)
+	printAsJSON("Broadcast transaction (in JSON format) response", broadcastTxResult)
 
 	// TODO: Block code executing until the transaction is placed in a block?
 }

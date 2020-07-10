@@ -94,12 +94,11 @@ func (key *PublicKey) AddressString() string {
 
 // AddressBytes returns address (calculated from public key) as byte array with 20 bytes length.
 func (key *PublicKey) AddressBytes() []byte {
-	hashA := sha256.Sum256(key.BytesCompressed())
-	hash := ripemd160.New()
-	_, err := hash.Write(hashA[:])
+	hash := sha256.Sum256(key.BytesCompressed())
+	hasher := ripemd160.New()
+	_, err := hasher.Write(hash[:])
 	if err != nil {
 		return nil
 	}
-	hashB := hash.Sum(make([]byte, 0, 20))
-	return hashB
+	return hasher.Sum(make([]byte, 0, 20))
 }
