@@ -3,6 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"strings"
+
+	"github.com/sethvargo/go-diceware/diceware"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -20,12 +24,19 @@ const (
 	testReceiverAddress    = "dx1yzxrvpj807dzs5mapwpu77zuh4669lltjheqvv"
 	testValidatorAddress   = "dxvaloper16rr3cvdgj8jsywhx8lfteunn9uz0xg2czw6gx5"
 	testCoin               = "tdel"
+	testTxHash             = "16B3284DD7ADCCCE74109A713B87D134C92089A0759297551BA2D4B4DA558B40"
+
+	hugeGas = 16 * 1024
 )
 
 var api *decapi.API
 var account *wallet.Account
 
 var err error
+
+////////////////////////////////////////////////////////////////
+// Decimal SDK example initializing
+////////////////////////////////////////////////////////////////
 
 func init() {
 
@@ -55,14 +66,22 @@ func init() {
 	}
 }
 
+////////////////////////////////////////////////////////////////
+// Decimal SDK example running
+////////////////////////////////////////////////////////////////
+
 func main() {
 
-	// Create send coin transaction
+	// Request everything from the API
 	exampleRequests()
 
-	// Create and broadcast send coin transaction
+	// Create and broadcast transactions
 	exampleBroadcastMsgSendCoin()
 }
+
+////////////////////////////////////////////////////////////////
+// Decimal API requesting data
+////////////////////////////////////////////////////////////////
 
 func exampleRequests() {
 
@@ -115,7 +134,18 @@ func exampleRequests() {
 		panic(err)
 	}
 	printAsJSON("Validator response", validator)
+
+	// Request information about transaction with specific hash
+	tx, err := api.Transaction(testTxHash)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Transaction response", tx)
 }
+
+////////////////////////////////////////////////////////////////
+// Decimal API broadcasting transactions
+////////////////////////////////////////////////////////////////
 
 func exampleBroadcastMsgSendCoin() {
 
@@ -135,22 +165,30 @@ func exampleBroadcastMsgSendCoin() {
 	msg := decapi.NewMsgSendCoin(sender, coin, receiver)
 
 	// Prepare transaction arguments
-	fee := auth.NewStdFee(200000, sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0))))
-	memo := "Test sending coin..."
+	msgs := []sdk.Msg{msg}
+	fee := auth.NewStdFee(hugeGas, sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0))))
+	memo := ""
+	if words, _ := diceware.Generate(rand.Int() % 16); len(words) > 0 {
+		memo = strings.Join(words, " ")
+	}
 
 	// Create and sign transaction
-	tx := account.CreateTransaction([]sdk.Msg{msg}, fee, memo)
+	tx := account.CreateTransaction(msgs, fee, memo)
 	tx, err = account.SignTransaction(tx)
 	if err != nil {
 		panic(err)
 	}
+
+	// TODO: Estimate and adjust amount of gas wanted for the transaction
 
 	// Broadcast signed transaction
 	sendTxResult, err := api.SendTransactionJSON(tx)
 	if err != nil {
 		panic(err)
 	}
-	printAsJSON("Send tx in JSON format result", sendTxResult)
+	printAsJSON("Sent transaction in JSON format response", sendTxResult)
+
+	// TODO: Block code executing until the transaction is placed in a block?
 }
 
 // printAsJSON prints `obj` in JSON format.
