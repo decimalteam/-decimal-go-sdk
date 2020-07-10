@@ -46,12 +46,18 @@ func NewAPIWithClient(hostURL string, client *resty.Client) *API {
 	}
 }
 
-// ensureChainID checks if chain ID is empty and retrieves it from the API if so.
-func (api *API) ensureChainID() (err error) {
-	if len(api.chainID) > 0 {
-		return
-	}
+// Config returns Cosmos SDK config.
+func (api *API) Config() *sdk.Config {
+	return api.config
+}
 
+// Codec returns Cosmos SDK codec.
+func (api *API) Codec() *codec.Codec {
+	return api.codec
+}
+
+// ChainID retrieves chain ID.
+func (api *API) ChainID() (chainID string, err error) {
 	url := "/rpc/genesis/chain"
 	res, err := api.client.R().Get(url)
 	if err != nil {
@@ -61,8 +67,8 @@ func (api *API) ensureChainID() (err error) {
 		err = NewResponseError(res)
 		return
 	}
-
 	api.chainID = string(res.Body())
+	chainID = api.chainID
 	return
 }
 

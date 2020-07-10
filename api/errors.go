@@ -7,6 +7,10 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+////////////////////////////////////////////////////////////////
+// Error - contains Decimal API error response fields.
+////////////////////////////////////////////////////////////////
+
 // Error contains Decimal API error response fields.
 type Error struct {
 	StatusCode int    `json:"statusCode"`
@@ -19,7 +23,11 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("statusCode: %d, message: \"%s\", data: \"%s\"", e.StatusCode, e.Message, e.Err)
 }
 
-// ResponseError wraps Resty respons and allows to generate error info.
+////////////////////////////////////////////////////////////////
+// ResponseError - wraps Resty response error.
+////////////////////////////////////////////////////////////////
+
+// ResponseError wraps Resty response error and allows to generate error info.
 type ResponseError struct {
 	*resty.Response
 }
@@ -41,4 +49,21 @@ func (res *ResponseError) Error() string {
 	}
 	marshal, _ := json.Marshal(detailError)
 	return string(marshal)
+}
+
+////////////////////////////////////////////////////////////////
+// TxError - contains Decimal Node error response fields.
+////////////////////////////////////////////////////////////////
+
+// TxError contains Decimal Node error response fields.
+type TxError struct {
+	Height string `json:"height"`
+	TxHash string `json:"txhash"`
+	Code   int    `json:"code"`
+	RawLog string `json:"raw_log"`
+}
+
+// Error returns error info as JSON string.
+func (e *TxError) Error() string {
+	return fmt.Sprintf("height: %s, txHash: %s, code: %d, raw_log: \"%s\"", e.Height, e.TxHash, e.Code, e.RawLog)
 }

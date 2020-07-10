@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"crypto/ecdsa"
+	"encoding/base64"
 	"math/big"
 )
 
@@ -13,33 +14,40 @@ type PrivateKey struct {
 }
 
 // NewPrivateKeyFromBytes creates instance of private key object from byte array.
-func NewPrivateKeyFromBytes(privateKey []byte) (*PrivateKey, error) {
-	publicKey, err := NewPublicKeyFromPrivateKeyBytes(privateKey)
+func NewPrivateKeyFromBytes(data []byte) (*PrivateKey, error) {
+	publicKey, err := NewPublicKeyFromPrivateKeyBytes(data)
 	if err != nil {
 		return nil, err
 	}
 	ecdsaPrivateKey := &ecdsa.PrivateKey{
-		PublicKey: *publicKey.GetECDSA(),
-		D:         new(big.Int).SetBytes(privateKey),
+		PublicKey: *publicKey.ECDSA(),
+		D:         new(big.Int).SetBytes(data),
 	}
 	return &PrivateKey{
-		data:            privateKey,
+		data:            data,
 		ecdsaPrivateKey: ecdsaPrivateKey,
 		publicKey:       publicKey,
 	}, nil
 }
 
-// GetBytes returns private key as byte array with 32 bytes length.
-func (key *PrivateKey) GetBytes() []byte {
+// String returns string representation of the private key.
+// It is actually just private key presented as byte array
+// with 32 bytes length encoded to base64 format.
+func (key *PrivateKey) String() string {
+	return base64.StdEncoding.EncodeToString(key.data)
+}
+
+// Bytes returns private key as byte array with 32 bytes length.
+func (key *PrivateKey) Bytes() []byte {
 	return key.data
 }
 
-// GetECDSA returns pointer to base ecdsa.PrivateKey.
-func (key *PrivateKey) GetECDSA() *ecdsa.PrivateKey {
+// ECDSA returns pointer to base ecdsa.PrivateKey.
+func (key *PrivateKey) ECDSA() *ecdsa.PrivateKey {
 	return key.ecdsaPrivateKey
 }
 
-// GetPublicKey returns pointer to public key.
-func (key *PrivateKey) GetPublicKey() *PublicKey {
+// PublicKey returns pointer to public key.
+func (key *PrivateKey) PublicKey() *PublicKey {
 	return key.publicKey
 }

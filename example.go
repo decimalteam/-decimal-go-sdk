@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -15,37 +14,78 @@ import (
 const (
 	hostURL = "https://testnet-gate.decimalchain.com/api"
 
-	testMnemonic         = "repair furnace west loud peasant false six hockey poem tube now alien service phone hazard winter favorite away sand fuel describe version tragic vendor"
-	testSenderAddress    = "dx12k95ukkqzjhkm9d94866r4d9fwx7tsd82r8pjd"
-	testReceiverAddress  = "dx1yzxrvpj807dzs5mapwpu77zuh4669lltjheqvv"
-	testValidatorAddress = "dxvaloper16rr3cvdgj8jsywhx8lfteunn9uz0xg2czw6gx5"
+	testMnemonicWords      = "repair furnace west loud peasant false six hockey poem tube now alien service phone hazard winter favorite away sand fuel describe version tragic vendor"
+	testMnemonicPassphrase = ""
+	testSenderAddress      = "dx12k95ukkqzjhkm9d94866r4d9fwx7tsd82r8pjd"
+	testReceiverAddress    = "dx1yzxrvpj807dzs5mapwpu77zuh4669lltjheqvv"
+	testValidatorAddress   = "dxvaloper16rr3cvdgj8jsywhx8lfteunn9uz0xg2czw6gx5"
+	testCoin               = "tdel"
 )
+
+var api *decapi.API
+var account *wallet.Account
+
+var err error
+
+func init() {
+
+	// Create Decimal API instance
+	api = decapi.NewAPI(hostURL)
+
+	// Create account from the mnemonic
+	account, err = wallet.NewAccountFromMnemonicWords(testMnemonicWords, testMnemonicPassphrase)
+	if err != nil {
+		panic(err)
+	}
+
+	// Request chain ID
+	if chainID, err := api.ChainID(); err == nil {
+		account = account.WithChainID(chainID)
+		fmt.Printf("Current chain ID: %s\n", chainID)
+	} else {
+		panic(err)
+	}
+
+	// Request account number and sequence and update with received values
+	if an, s, err := api.AccountNumberAndSequence(testSenderAddress); err == nil {
+		account = account.WithAccountNumber(an).WithSequence(s)
+		fmt.Printf("Account %s number: %d, sequence: %d\n", account.Address(), an, s)
+	} else {
+		panic(err)
+	}
+}
 
 func main() {
 
-	// Create Decimal API instance
-	api := decapi.NewAPI(hostURL)
+	// Create send coin transaction
+	exampleRequests()
+
+	// Create and broadcast send coin transaction
+	exampleBroadcastMsgSendCoin()
+}
+
+func exampleRequests() {
 
 	// Request information about the address
 	address, err := api.Address(testSenderAddress)
 	if err != nil {
 		panic(err)
 	}
-	print("Address request result", address)
+	printAsJSON("Address response", address)
 
 	// Request balance of the address
 	balance, err := api.Balance(testSenderAddress)
 	if err != nil {
 		panic(err)
 	}
-	print("Balance request result", balance)
+	printAsJSON("Balance response", balance)
 
 	// Request information about all coins
 	coins, err := api.Coins()
 	if err != nil {
 		panic(err)
 	}
-	print("Coins request result", coins)
+	printAsJSON("Coins response", coins)
 
 	// Request information about coin with specific symbol
 	symbol := coins[0].Symbol
@@ -53,40 +93,33 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	print(fmt.Sprintf("Coin %s request result", symbol), coin)
+	printAsJSON(fmt.Sprintf("Coin %s response", symbol), coin)
+
+	// Request information about all candidates
+	candidates, err := api.Candidates()
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Candidates response", candidates)
+
+	// Request information about all validators
+	validators, err := api.Validators()
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Validators response", validators)
 
 	// Request information about validator with specific address
 	validator, err := api.Validator(testValidatorAddress)
 	if err != nil {
 		panic(err)
 	}
-	print("Validator request result", validator)
+	printAsJSON("Validator response", validator)
+}
 
-	// Create mnemonic from words
-	mnemonic, err := wallet.NewMnemonicFromWords(testMnemonic, "")
-	if err != nil {
-		panic(err)
-	}
+func exampleBroadcastMsgSendCoin() {
 
-	// Create extended key from the mnemonic
-	extendedKey, err := wallet.NewExtendedKeyFromMnemonic(mnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	// Derive extended key
-	extendedKey, err = extendedKey.GetChildAtPath("44'/60'/0'/0/0")
-	if err != nil {
-		panic(err)
-	}
-
-	// Create private key
-	privateKey, err := extendedKey.GetECPrivateKey()
-	if err != nil {
-		panic(err)
-	}
-
-	// Create send coin transaction
+	// Prepare message arguments
 	sender, err := sdk.AccAddressFromBech32(testSenderAddress)
 	if err != nil {
 		panic(err)
@@ -95,29 +128,33 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	msg := decapi.MsgSendCoin{
-		Sender:   sender,
-		Coin:     sdk.NewCoin("tdel", sdk.NewInt(1000000000000000000)),
-		Receiver: receiver,
-	}
-	fee := auth.NewStdFee(200000, sdk.NewCoins(sdk.NewCoin("tdel", sdk.NewInt(0))))
+	amount := sdk.NewInt(1500000000000000000) // 1.5
+	coin := sdk.NewCoin(testCoin, amount)
+
+	// Prepare message
+	msg := decapi.NewMsgSendCoin(sender, coin, receiver)
+
+	// Prepare transaction arguments
+	fee := auth.NewStdFee(200000, sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0))))
 	memo := "Test sending coin..."
-	tx, bytesToSign, err := api.NewTransaction(testSenderAddress, []sdk.Msg{msg}, fee, memo)
+
+	// Create and sign transaction
+	tx := account.CreateTransaction([]sdk.Msg{msg}, fee, memo)
+	tx, err = account.SignTransaction(tx)
 	if err != nil {
 		panic(err)
 	}
-	tx, err = api.SignTransaction(tx, bytesToSign, privateKey)
+
+	// Broadcast signed transaction
+	sendTxResult, err := api.SendTransactionJSON(tx)
 	if err != nil {
 		panic(err)
 	}
-	txBytesBinary, err := api.EncodeTransactionBinary(tx)
-	txBytesJSON, err := api.EncodeTransactionJSON(tx)
-	fmt.Printf("Binary encoded transaction:\n%s\n", hex.EncodeToString(txBytesBinary))
-	fmt.Printf("JSON encoded transaction:\n%s\n", string(txBytesJSON))
+	printAsJSON("Send tx in JSON format result", sendTxResult)
 }
 
-// print prints `obj` in JSON format.
-func print(msg string, obj interface{}) {
+// printAsJSON prints `obj` in JSON format.
+func printAsJSON(msg string, obj interface{}) {
 	objStr, err := json.MarshalIndent(obj, "", "    ")
 	if err != nil {
 		panic(err)

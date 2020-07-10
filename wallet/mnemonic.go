@@ -11,39 +11,27 @@ type Mnemonic struct {
 	seed    []byte
 }
 
-// NewMnemonicRandom creates a new random (crypto safe) Mnemonic. Use 128 bits for a 12 words code or 256 bits for a 24 words.
-func NewMnemonicRandom(bits int, password string) (*Mnemonic, error) {
+// NewMnemonic creates a new random (crypto safe) Mnemonic. Use 128 bits for a 12 words code or 256 bits for a 24 words.
+func NewMnemonic(bits int, password string) (*Mnemonic, error) {
 	entropy, err := bip39.NewEntropy(bits)
 	if err != nil {
 		return nil, err
 	}
-	words, err := bip39.NewMnemonic(entropy)
-	if err != nil {
-		return nil, err
-	}
-	return &Mnemonic{
-		entropy: entropy,
-		words:   words,
-		seed:    bip39.NewSeed(words, password),
-	}, nil
-}
-
-// NewMnemonicFromEntropy creates a Mnemonic based on a known entropy.
-func NewMnemonicFromEntropy(entropy []byte, password string) (*Mnemonic, error) {
-	words, err := bip39.NewMnemonic(entropy)
-	if err != nil {
-		return nil, err
-	}
-	return &Mnemonic{
-		entropy: entropy,
-		words:   words,
-		seed:    bip39.NewSeed(words, password),
-	}, nil
+	return NewMnemonicFromEntropy(entropy, password)
 }
 
 // NewMnemonicFromWords creates a Mnemonic based on a known list of words.
 func NewMnemonicFromWords(words string, password string) (*Mnemonic, error) {
 	entropy, err := bip39.MnemonicToByteArray(words, true)
+	if err != nil {
+		return nil, err
+	}
+	return NewMnemonicFromEntropy(entropy, password)
+}
+
+// NewMnemonicFromEntropy creates a Mnemonic based on a known entropy.
+func NewMnemonicFromEntropy(entropy []byte, password string) (*Mnemonic, error) {
+	words, err := bip39.NewMnemonic(entropy)
 	if err != nil {
 		return nil, err
 	}

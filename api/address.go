@@ -9,11 +9,11 @@ import (
 
 // AddressResponse contains API response.
 type AddressResponse struct {
-	OK     bool `json:"ok,omitempty"`
+	OK     bool `json:"ok"`
 	Result struct {
-		Address *AddressResult `json:"address,omitempty"`
-		Coins   []*CoinResult  `json:"coins,omitempty"`
-	} `json:"result,omitempty"`
+		Address *AddressResult `json:"address"`
+		Coins   []*CoinResult  `json:"coins"`
+	} `json:"result"`
 }
 
 // AddressResult contains API response fields.
@@ -48,6 +48,7 @@ func (api *API) Address(address string) (*AddressResult, error) {
 		if err != nil {
 			return nil, err
 		}
+		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
 	}
 
 	return response.Result.Address, nil
@@ -64,8 +65,8 @@ func (api *API) Balance(address string) (map[string]string, error) {
 	return response.Balance, nil
 }
 
-// AccountNumberAndNonce requests account number and next transaction number (nonce) of specified address.
-func (api *API) AccountNumberAndNonce(address string) (uint64, uint64, error) {
+// AccountNumberAndSequence requests account number and current sequence (nonce) of specified address.
+func (api *API) AccountNumberAndSequence(address string) (uint64, uint64, error) {
 
 	url := fmt.Sprintf("/rpc/auth/accounts/%s", address)
 	res, err := api.client.R().Get(url)
