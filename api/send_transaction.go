@@ -22,8 +22,7 @@ type SendTransactionResult struct {
 	RawLog string `json:"raw_log"`
 }
 
-// NOTE:
-// To ensure that transaction was successfully committed to the blockchain,
+// NOTE: To ensure that transaction was successfully committed to the blockchain,
 // you need to find the transaction by the hash and ensure that the status code equals to 0.
 
 // SendTransactionJSON sends presented in JSON format transaction to the node and returns the result.

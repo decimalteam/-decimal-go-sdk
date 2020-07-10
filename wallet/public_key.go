@@ -2,12 +2,13 @@ package wallet
 
 import (
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/base64"
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tendermint/tendermint/libs/bech32"
+	"golang.org/x/crypto/ripemd160"
 )
 
 // PublicKey contains public key object.
@@ -93,6 +94,12 @@ func (key *PublicKey) AddressString() string {
 
 // AddressBytes returns address (calculated from public key) as byte array with 20 bytes length.
 func (key *PublicKey) AddressBytes() []byte {
-	hash := crypto.Keccak256Hash(key.data[1:]).Bytes()
-	return hash[12:]
+	hashA := sha256.Sum256(key.BytesCompressed())
+	hash := ripemd160.New()
+	_, err := hash.Write(hashA[:])
+	if err != nil {
+		return nil
+	}
+	hashB := hash.Sum(make([]byte, 0, 20))
+	return hashB
 }

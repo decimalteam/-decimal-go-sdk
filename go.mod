@@ -12,4 +12,5 @@ require (
 	github.com/sethvargo/go-diceware v0.2.0
 	github.com/tendermint/tendermint v0.33.3
 	github.com/tyler-smith/go-bip39 v1.0.2
+	golang.org/x/crypto v0.0.0-20200115085410-6d4e4cb37c7d
 )
