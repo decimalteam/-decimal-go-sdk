@@ -1,11 +1,16 @@
 package wallet
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/btcsuite/btcutil/hdkeychain"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
@@ -177,4 +182,54 @@ func (acc *Account) SignTransaction(tx auth.StdTx) (auth.StdTx, error) {
 	tx.Signatures = append(tx.Signatures, signature)
 
 	return tx, err
+}
+
+// IssueCheck issues check and returns it as base58 string.
+func (acc *Account) IssueCheck(coinSymbol string, amount sdk.Int, nonce sdk.Int, dueBlock uint64, passphrase string) (string, error) {
+
+	// TODO: Check if coin exists?
+	// TODO: Check amount?
+
+	// Prepare private key from passphrase
+	passphraseHash := sha256.Sum256([]byte(passphrase))
+	passphrasePrivKey, _ := crypto.ToECDSA(passphraseHash[:])
+
+	// Prepare check without lock
+	check := &Check{
+		ChainID:  acc.chainID,
+		Coin:     coinSymbol,
+		Amount:   amount.BigInt(),
+		Nonce:    nonce.BigInt().Bytes(),
+		DueBlock: dueBlock,
+	}
+
+	// Prepare check lock
+	checkHash := check.HashWithoutLock()
+	lock, _ := crypto.Sign(checkHash[:], passphrasePrivKey)
+
+	// Fill check with prepared lock
+	check.Lock = big.NewInt(0).SetBytes(lock)
+
+	// Retrieve private key from the keybase account
+	privKeyECDSA, err := crypto.ToECDSA(acc.privateKeyTM[:])
+	if err != nil {
+		panic(err)
+	}
+	// address := sdk.AccAddress(privKey.PubKey().Address())
+
+	// Sign check by check issuer
+	checkHash = check.Hash()
+	signature, err := crypto.Sign(checkHash[:], privKeyECDSA)
+	if err != nil {
+		panic(err)
+	}
+	check.SetSignature(signature)
+
+	// Return issued raw check encoded to base64 format to the issuer
+	checkBytes, err := rlp.EncodeToBytes(check)
+	if err != nil {
+		panic(err)
+	}
+
+	return base58.Encode(checkBytes), nil
 }
