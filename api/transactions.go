@@ -82,11 +82,7 @@ func (api *API) Transaction(txHash string) (*TransactionResult, error) {
 
 	response := TransactionResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.Result == nil {
+	if err != nil || response.Result == nil {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {

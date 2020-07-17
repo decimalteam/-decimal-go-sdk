@@ -38,11 +38,7 @@ func (api *API) Address(address string) (*AddressResult, error) {
 
 	response := AddressResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	if !response.OK {
+	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {

@@ -59,11 +59,7 @@ func (api *API) Candidates() ([]*ValidatorResult, error) {
 
 	response := ValidatorsResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	if !response.OK {
+	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
@@ -89,11 +85,7 @@ func (api *API) Validators() ([]*ValidatorResult, error) {
 
 	response := ValidatorsResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	if !response.OK {
+	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
@@ -119,11 +111,7 @@ func (api *API) Validator(address string) (*ValidatorResult, error) {
 
 	response := ValidatorResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	if !response.OK {
+	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {

@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"bitbucket.org/decimalteam/decimal-go-sdk/wallet"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 )
+
+const hugeGas = uint64(16 * 1024)
 
 // BroadcastTxResponse contains API response.
 type BroadcastTxResponse struct {
@@ -32,8 +36,33 @@ const (
 // NOTE: To ensure that transaction was successfully committed to the blockchain,
 // you need to find the transaction by the hash and ensure that the status code equals to 0.
 
-// BroadcastTransactionJSON sends transaction (presented in JSON format) to the node and returns the result.
-func (api *API) BroadcastTransactionJSON(tx auth.StdTx) (*BroadcastTxResult, error) {
+// NewSignedTransaction creates and signs a transaction.
+func (api *API) NewSignedTransaction(msgs []sdk.Msg, feeCoins sdk.Coins, memo string, account *wallet.Account) (tx auth.StdTx, err error) {
+	// Adjust gas until it is equal to gasEstimated
+	for gas, gasEstimated := hugeGas, uint64(0); gas != gasEstimated; {
+		if gasEstimated != 0 {
+			gas = gasEstimated
+		}
+
+		// Create and sign transaction
+		fee := auth.NewStdFee(gas, feeCoins)
+		tx = account.CreateTransaction(msgs, fee, memo)
+		tx, err = account.SignTransaction(tx)
+		if err != nil {
+			return
+		}
+
+		// Estimate and adjust amount of gas wanted for the transaction
+		gasEstimated, err = api.EstimateTransactionGasWanted(tx)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// BroadcastSignedTransactionJSON sends transaction (presented in JSON format) to the node and returns the result.
+func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx) (*BroadcastTxResult, error) {
 
 	// Marshal transaction to special JSON format
 	txJSONBytes, err := api.codec.MarshalJSON(tx)
@@ -59,12 +88,9 @@ func (api *API) BroadcastTransactionJSON(tx auth.StdTx) (*BroadcastTxResult, err
 	// Unmarshal response from JSON format
 	response := BroadcastTxResult{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
 
 	// Check transaction execution code (success or fail)
-	if response.Code != 0 {
+	if err != nil || response.Code != 0 {
 		txError := TxError{}
 		err = json.Unmarshal(res.Body(), &txError)
 		if err != nil {
@@ -76,8 +102,8 @@ func (api *API) BroadcastTransactionJSON(tx auth.StdTx) (*BroadcastTxResult, err
 	return &response, nil
 }
 
-// BroadcastRawTransaction sends raw transaction to the node and returns the result.
-func (api *API) BroadcastRawTransaction(tx auth.StdTx) (*BroadcastTxResult, error) {
+// BroadcastRawSignedTransaction sends raw transaction to the node and returns the result.
+func (api *API) BroadcastRawSignedTransaction(tx auth.StdTx) (*BroadcastTxResult, error) {
 
 	txBytes, err := api.codec.MarshalBinaryLengthPrefixed(tx)
 	if err != nil {
@@ -96,11 +122,7 @@ func (api *API) BroadcastRawTransaction(tx auth.StdTx) (*BroadcastTxResult, erro
 
 	response := BroadcastTxResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	if !response.OK {
+	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {

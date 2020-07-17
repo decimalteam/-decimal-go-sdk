@@ -4,13 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
-	"github.com/sethvargo/go-diceware/diceware"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 
 	decapi "bitbucket.org/decimalteam/decimal-go-sdk/api"
 	"bitbucket.org/decimalteam/decimal-go-sdk/wallet"
@@ -19,16 +15,16 @@ import (
 const (
 	hostURL = "https://testnet-gate.decimalchain.com/api"
 
-	testMnemonicWords      = "repair furnace west loud peasant false six hockey poem tube now alien service phone hazard winter favorite away sand fuel describe version tragic vendor"
-	testMnemonicPassphrase = ""
-	testSenderAddress      = "dx12k95ukkqzjhkm9d94866r4d9fwx7tsd82r8pjd"
-	testReceiverAddress    = "dx1yzxrvpj807dzs5mapwpu77zuh4669lltjheqvv"
-	testStakesMakerAddress = "dx1dqx544dw3gfc2q2n0yv0ghdsjq79zlaf9uflht"
-	testValidatorAddress   = "dxvaloper16rr3cvdgj8jsywhx8lfteunn9uz0xg2czw6gx5"
-	testCoin               = "tdel"
-	testTxHash             = "16B3284DD7ADCCCE74109A713B87D134C92089A0759297551BA2D4B4DA558B40"
-
-	hugeGas = uint64(16 * 1024)
+	testMnemonicWords              = "repair furnace west loud peasant false six hockey poem tube now alien service phone hazard winter favorite away sand fuel describe version tragic vendor"
+	testMnemonicPassphrase         = ""
+	testSenderAddress              = "dx12k95ukkqzjhkm9d94866r4d9fwx7tsd82r8pjd"
+	testReceiverAddress            = "dx1yzxrvpj807dzs5mapwpu77zuh4669lltjheqvv"
+	testStakesMakerAddress         = "dx1dqx544dw3gfc2q2n0yv0ghdsjq79zlaf9uflht"
+	testValidatorAddress           = "dxvaloper16rr3cvdgj8jsywhx8lfteunn9uz0xg2czw6gx5"
+	testMultisigParticipantAddress = "dx173lnn7jjuym5rwp23aufhnwshylrdemcswtcg5"
+	testMultisigAddress            = "dx1kgnzuwwgzhecyk0dn62sxmp4wyukvv3ekjqyy6"
+	testCoin                       = "tdel"
+	testTxHash                     = "22EAE3E30713B1CC319FDDFCA0F47E94CC4BB94CC2052EBC1A255B53D27D05B7"
 )
 
 var api *decapi.API
@@ -144,6 +140,27 @@ func exampleRequests() {
 		panic(err)
 	}
 	printAsJSON("Stakes response", stakes)
+
+	// Request information about multisig wallets containing participant with specific address
+	multisigWallets, err := api.MultisigWallets(testMultisigParticipantAddress)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Multisig wallets response", multisigWallets)
+
+	// Request information about multisig wallet with specific address
+	multisigWallet, err := api.MultisigWallet(testMultisigAddress)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Multisig wallet response", multisigWallet)
+
+	// Request information about transactions of multisig wallet with specific address
+	multisigTransactions, err := api.MultisigTransactions(testMultisigAddress)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Multisig transactions response", multisigTransactions)
 }
 
 ////////////////////////////////////////////////////////////////
@@ -171,36 +188,15 @@ func exampleBroadcastMsgSendCoin() {
 	msgs := []sdk.Msg{msg}
 	feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
 	memo := ""
-	if words, _ := diceware.Generate(rand.Int() % 16); len(words) > 0 {
-		memo = strings.Join(words, " ")
-	}
 
-	// Declare transaction variable
-	var tx auth.StdTx
-
-	// Adjust gas until it is equal to gasEstimated
-	for gas, gasEstimated := hugeGas, uint64(0); gas != gasEstimated; {
-		if gasEstimated != 0 {
-			gas = gasEstimated
-		}
-
-		// Create and sign transaction
-		fee := auth.NewStdFee(gas, feeCoins)
-		tx = account.CreateTransaction(msgs, fee, memo)
-		tx, err = account.SignTransaction(tx)
-		if err != nil {
-			panic(err)
-		}
-
-		// Estimate and adjust amount of gas wanted for the transaction
-		gasEstimated, err = api.EstimateTransactionGasWanted(tx)
-		if err != nil {
-			panic(err)
-		}
+	// Create signed transaction
+	tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, account)
+	if err != nil {
+		panic(err)
 	}
 
 	// Broadcast signed transaction
-	broadcastTxResult, err := api.BroadcastTransactionJSON(tx)
+	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx)
 	if err != nil {
 		panic(err)
 	}

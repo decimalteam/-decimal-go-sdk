@@ -49,11 +49,7 @@ func (api *API) Coin(symbol string) (*CoinResult, error) {
 
 	response := CoinResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	if !response.OK {
+	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
@@ -79,11 +75,7 @@ func (api *API) Coins() ([]*CoinResult, error) {
 
 	response := CoinsResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	if !response.OK {
+	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
