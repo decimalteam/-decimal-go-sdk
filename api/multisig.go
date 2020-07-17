@@ -49,7 +49,10 @@ type MultisigTransactionResult struct {
 	Transaction   string `json:"transaction"`
 	Confirmed     bool   `json:"confirmed"`
 	Confirmations uint64 `json:"confirmations"`
-	// TODO: field `data`
+	Data          map[string]struct {
+		SignerWeight uint64    `json:"signer_weight"`
+		Timestamp    time.Time `json:"timestamp"`
+	} `json:"data"`
 	Coins []*struct {
 		Coin   string `json:"coin"`
 		Amount string `json:"amount"`
@@ -81,13 +84,12 @@ type MultisigWalletOwner struct {
 
 // MultisigAccount contains info about multisig wallet underlying account.
 type MultisigAccount struct {
-	ID      uint64 `json:"id"`
-	Address string `json:"address"`
-	Type    string `json:"type"`
-	// TODO: Field balance
-	// TODO: Field nonce
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        uint64            `json:"id"`
+	Address   string            `json:"address"`
+	Type      string            `json:"type"`
+	Balance   map[string]string `json:"balance"`
+	CreatedAt time.Time         `json:"createdAt"`
+	UpdatedAt time.Time         `json:"updatedAt"`
 }
 
 // MultisigWallets requests full list of multisig wallets which has account with specified address as participant.
