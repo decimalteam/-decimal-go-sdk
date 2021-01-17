@@ -161,6 +161,20 @@ func exampleRequests() {
 		panic(err)
 	}
 	printAsJSON("Multisig transactions response", multisigTransactions)
+
+	// Request information about all govs
+	govs, err := api.Govs()
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Govs transactions response", govs)
+
+	govID := govs[0].ProposalID
+	gov, err := api.Gov(govID)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON(fmt.Sprintf("Gov with ID = %d response", govID), gov)
 }
 
 ////////////////////////////////////////////////////////////////

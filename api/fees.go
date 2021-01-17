@@ -121,6 +121,8 @@ func (api *API) getMessageFee(msg sdk.Msg) (fee Fee, err error) {
 		default:
 			err = fmt.Errorf(`unexpected message "validator/%s"`, t)
 		}
+	case "gov":
+		fee = 0
 	default:
 		err = fmt.Errorf(`unexpected message route "%s"`, r)
 	}
