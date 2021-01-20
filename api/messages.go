@@ -2,6 +2,7 @@ package api
 
 import (
 	"bitbucket.org/decimalteam/go-node/x/coin"
+	"bitbucket.org/decimalteam/go-node/x/gov"
 	"bitbucket.org/decimalteam/go-node/x/multisig"
 	"bitbucket.org/decimalteam/go-node/x/validator"
 )
@@ -68,6 +69,18 @@ var (
 	NewMsgCreateTransaction = multisig.NewMsgCreateTransaction
 	// NewMsgSignTransaction .
 	NewMsgSignTransaction = multisig.NewMsgSignTransaction
+)
+
+////////////////////////////////////////////////////////////////
+// Module: gov
+////////////////////////////////////////////////////////////////
+
+// Messages.
+type (
+	// MsgSubmitProposal .
+	MsgSubmitProposal = gov.MsgSubmitProposal
+	// MsgVote .
+	MsgVote = gov.MsgVote
 )
 
 ////////////////////////////////////////////////////////////////

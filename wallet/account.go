@@ -3,7 +3,6 @@ package wallet
 import (
 	"crypto/sha256"
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -86,7 +85,6 @@ func NewAccountFromMnemonic(mnemonic *Mnemonic) (*Account, error) {
 
 	// Calculate address from private key
 	address := privateKey.PublicKey().AddressString()
-	fmt.Println(address)
 
 	// Create and return account
 	result := &Account{

@@ -3,33 +3,62 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-
-	"bitbucket.org/decimalteam/go-node/x/gov"
+	"time"
 )
 
-// GovResponse contains API response.
-type GovResponse struct {
-	OK     bool      `json:"ok"`
-	Result GovResult `json:"result"`
+// ProposalResponse contains API response.
+type ProposalResponse struct {
+	OK     bool           `json:"ok"`
+	Result ProposalResult `json:"result"`
 }
 
-// GovsResponse contains API response.
-type GovsResponse struct {
+// ProposalsResponse contains API response.
+type ProposalsResponse struct {
 	OK     bool `json:"ok"`
 	Result struct {
-		Count uint64      `json:"count"`
-		Govs  []GovResult `json:"coins"`
+		Count     uint64           `json:"count"`
+		Proposals []ProposalResult `json:"proposals"`
 	} `json:"result"`
 }
 
 // CoinResult contains API response fields.
-type GovResult struct {
-	gov.Proposal
+type ProposalResult struct {
+	ProposalID       int64     `json:"proposalId"`
+	Title            string    `json:"title"`
+	Description      string    `json:"description"`
+	VotingStartBlock string    `json:"votingStartBlock"`
+	VotingEndBlock   string    `json:"votingEndBlock"`
+	Proposer         string    `json:"proposer"`
+	StakesTotal      float64   `json:"stakesTotal"`
+	StakesYes        float64   `json:"stakesYes"`
+	StakesNo         float64   `json:"stakesNo"`
+	StakesAbstain    float64   `json:"stakesAbstain"`
+	Status           string    `json:"status"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
+	PercentYes       string    `json:"percentYes"`
+	PercentNo        string    `json:"percentNo"`
+	PercentAbstain   string    `json:"percentAbstain"`
+	PercentNone      string    `json:"percentNone"`
+	Votes            struct {
+		Count int `json:"count"`
+		Votes []struct {
+			ID          int64     `json:"id"`
+			HashTx      string    `json:"hashTx"` // Hash of transaction in which the proposal was created
+			ValidatorId string    `json:"validatorId"`
+			Stake       float64   `json:"stake"`
+			Vote        string    `json:"vote"`
+			CreatedAt   time.Time `json:"createdAt"`
+			UpdatedAt   time.Time `json:"updatedAt"`
+		}
+	} `json:"votes"`
+
+	HashTx string `json:"hashTx"` // Hash of transaction in which the proposal was created
 }
 
-// Govs requests full information about all govs.
-func (api *API) Govs() ([]GovResult, error) {
-	url := "/govs"
+// Proposals requests full information about all govs.
+func (api *API) Proposals() ([]ProposalResult, error) {
+	url := "/proposals"
 
 	res, err := api.client.R().Get(url)
 	if err != nil {
@@ -39,9 +68,10 @@ func (api *API) Govs() ([]GovResult, error) {
 		return nil, NewResponseError(res)
 	}
 
-	response := GovsResponse{}
+	response := ProposalsResponse{}
 	err = json.Unmarshal(res.Body(), &response)
 	if err != nil || !response.OK {
+		fmt.Println(err)
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
@@ -50,30 +80,31 @@ func (api *API) Govs() ([]GovResult, error) {
 		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
 	}
 
-	return response.Result.Govs, nil
+	return response.Result.Proposals, nil
 }
 
-// Gov requests full information about gov with specified id.
-func (api *API) Gov(id uint64) (GovResult, error) {
+// Proposal requests full information about gov with specified id.
+func (api *API) Proposal(id int64) (ProposalResult, error) {
 
-	url := fmt.Sprintf("/gov/%d", id)
+	url := fmt.Sprintf("/proposalById/%d", id)
 	res, err := api.client.R().Get(url)
 	if err != nil {
-		return GovResult{}, err
+		return ProposalResult{}, err
 	}
 	if res.IsError() {
-		return GovResult{}, NewResponseError(res)
+		return ProposalResult{}, NewResponseError(res)
 	}
 
-	response := GovResponse{}
+	response := ProposalResponse{}
 	err = json.Unmarshal(res.Body(), &response)
 	if err != nil || !response.OK {
+		fmt.Println(err)
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
-			return GovResult{}, err
+			return ProposalResult{}, err
 		}
-		return GovResult{}, fmt.Errorf("received response containing error: %s", responseError.Error())
+		return ProposalResult{}, fmt.Errorf("received response containing error: %s", responseError.Error())
 	}
 
 	return response.Result, nil

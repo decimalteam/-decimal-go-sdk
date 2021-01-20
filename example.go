@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	hostURL = "https://testnet-gate.decimalchain.com/api"
+	hostURL = "https://devnet-gate.decimalchain.com/api"
 
 	testMnemonicWords              = "repair furnace west loud peasant false six hockey poem tube now alien service phone hazard winter favorite away sand fuel describe version tragic vendor"
 	testMnemonicPassphrase         = ""
@@ -163,18 +164,20 @@ func exampleRequests() {
 	printAsJSON("Multisig transactions response", multisigTransactions)
 
 	// Request information about all govs
-	govs, err := api.Govs()
+	govs, err := api.Proposals()
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
-	printAsJSON("Govs transactions response", govs)
+	printAsJSON("Proposals transactions response", govs)
 
 	govID := govs[0].ProposalID
-	gov, err := api.Gov(govID)
+	gov, err := api.Proposal(govID)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
-	printAsJSON(fmt.Sprintf("Gov with ID = %d response", govID), gov)
+	printAsJSON(fmt.Sprintf("Proposal with ID = %d response", govID), gov)
 }
 
 ////////////////////////////////////////////////////////////////
