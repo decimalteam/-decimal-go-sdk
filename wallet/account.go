@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	"github.com/tendermint/tendermint/libs/bech32"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth"
@@ -230,4 +231,13 @@ func (acc *Account) IssueCheck(coinSymbol string, amount sdk.Int, nonce sdk.Int,
 	}
 
 	return base58.Encode(checkBytes), nil
+}
+
+func (acc *Account) RedeemCheck() (string, error) {
+	// todo
+	_ = bech32.Decode(acc.address)
+
+	_, _ = crypto.Sign([]byte{}, "")
+
+	return "", nil
 }

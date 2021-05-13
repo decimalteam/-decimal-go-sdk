@@ -4,6 +4,8 @@ import (
 	"bitbucket.org/decimalteam/go-node/x/coin"
 	"bitbucket.org/decimalteam/go-node/x/gov"
 	"bitbucket.org/decimalteam/go-node/x/multisig"
+	"bitbucket.org/decimalteam/go-node/x/nft"
+	"bitbucket.org/decimalteam/go-node/x/swap"
 	"bitbucket.org/decimalteam/go-node/x/validator"
 )
 
@@ -21,6 +23,10 @@ type (
 	MsgMultiSendCoin = coin.MsgMultiSendCoin
 	// MsgBuyCoin .
 	MsgBuyCoin = coin.MsgBuyCoin
+	// MsgUpdateCoint
+	MsgUpdateCoin = coin.MsgUpdateCoin
+	// MsgIssueCheck
+	MsgIssueCheck = coin.MsgIssueCheck
 	// MsgSellCoin .
 	MsgSellCoin = coin.MsgSellCoin
 	// MsgSellAllCoin .
@@ -37,6 +43,10 @@ var (
 	NewMsgSendCoin = coin.NewMsgSendCoin
 	// NewMsgMultiSendCoin creates MsgMultiSendCoin message.
 	NewMsgMultiSendCoin = coin.NewMsgMultiSendCoin
+	// NewMsgUpdateCoin creates MsgUpdateCoin message.
+	NewMsgUpdateCoin = coin.NewMsgUpdateCoin
+	// NewMsgIssueCheck creates MsgIssueCheck message.
+	NewMsgIssueCheck = coin.MsgIssueCheck
 	// NewMsgBuyCoin creates MsgBuyCoin message.
 	NewMsgBuyCoin = coin.NewMsgBuyCoin
 	// NewMsgSellCoin creates MsgSellCoin message.
@@ -117,4 +127,60 @@ var (
 	NewMsgSetOnline = validator.NewMsgSetOnline
 	// NewMsgSetOffline .
 	NewMsgSetOffline = validator.NewMsgSetOffline
+)
+
+////////////////////////////////////////////////////////////////
+// Module: nft
+////////////////////////////////////////////////////////////////
+
+// Messages.
+type (
+	// MsgMintNFT
+	MsgMintNFT = nft.MsgMintNFT
+	// MsgBurnNFT
+	MsgBurnNFT = nft.MsgBurnNFT
+	// MsgTransferNFT
+	MsgTransferNFT = nft.MsgTransferNFT
+	// MsgEditNFTMetadata
+	MsgEditNFTMetadata = nft.MsgEditNFTMetadata
+	// MsgDelegateNFT
+	MsgDelegateNFT = nft.MsgDelegateNFT
+)
+
+// Initializing functions.
+var (
+	// NewMsgMintNFT
+	NewMsgMintNFT = nft.NewMsgMintNFT
+	// NewMsgBurnNFT
+	NewMsgBurnNFT = nft.NewMsgBurnNFT
+	// NewMsgTransferNFT
+	NewMsgTransferNFT = nft.NewMsgTransferNFT
+	// NewMsgEditNFTMetadata
+	NewMsgEditNFTMetadata = nft.NewMsgEditNFTMetadata
+	// NewMsgDelegateNFT
+	NewMsgDelegateNFT = nft.NewMsgDelegateNFT
+)
+
+////////////////////////////////////////////////////////////////
+// Module: swap
+////////////////////////////////////////////////////////////////
+
+// Messages.
+type (
+	// MsgSwapHtlt
+	MsgSwapHTLT = swap.MsgHTLT
+	// MsgSwapRedeem
+	MsgSwapRedeem = swap.MsgRedeem
+	// MsgSwapRefund
+	MsgSwapRefund = swap.MsgRefund
+)
+
+// Initializing functions.
+var (
+	// NewMsgSwapHtlt
+	NewMsgSwapHTLT = swap.NewMsgHTLT
+	// NewMsgSwapRedeem
+	NewMsgSwapRedeem = swap.NewMsgRedeem
+	// NewMsgSwapRefund
+	NewMsgSwapRefund = swap.NewMsgRefund
 )

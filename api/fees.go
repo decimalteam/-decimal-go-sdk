@@ -24,6 +24,7 @@ const unit Fee = 0.001
 // Fees for `coin/*` messages.
 const (
 	FeeCoinCreate      Fee = 100
+	FeeCoinUpdate      Fee = 0
 	FeeCoinSend        Fee = 10
 	FeeCoinMultiSend   Fee = 10 // +5 for each send except first one
 	FeeCoinBuy         Fee = 100
@@ -73,6 +74,8 @@ func (api *API) getMessageFee(msg sdk.Msg) (fee Fee, err error) {
 		switch t := msg.Type(); t {
 		case "create_coin":
 			fee = FeeCoinCreate
+		case "update_coin":
+			fee = FeeCoinUpdate
 		case "send_coin":
 			fee = FeeCoinSend
 		case "multi_send_coin":
