@@ -26,6 +26,7 @@ const (
 	testMultisigAddress            = "dx1kgnzuwwgzhecyk0dn62sxmp4wyukvv3ekjqyy6"
 	testCoin                       = "tdel"
 	testTxHash                     = "22EAE3E30713B1CC319FDDFCA0F47E94CC4BB94CC2052EBC1A255B53D27D05B7"
+	testNFTTokenId                 = "n46sJWaSEgJ0Qyie3pelWci7jCI9mN1Wi0QFujHKSenbDAWuxFOjdCfhQmB02lR2"
 )
 
 var api *decapi.API
@@ -77,6 +78,9 @@ func main() {
 
 	// Create and broadcast transactions
 	exampleBroadcastMsgSendCoin()
+
+	exampleBroadcastMsgMintNFT()
+	exampleBroadcastMsgBurnNFT()
 }
 
 ////////////////////////////////////////////////////////////////
@@ -220,6 +224,103 @@ func exampleBroadcastMsgSendCoin() {
 	printAsJSON("Broadcast transaction (in JSON format) response", broadcastTxResult)
 
 	// TODO: Block code executing until the transaction is placed in a block?
+}
+
+func exampleBroadcastMsgBurnNFT() {
+	// Prepare message arguments
+	sender, err := sdk.AccAddressFromBech32(testSenderAddress)
+	if err != nil {
+		panic(err)
+	}
+
+	// Prepare message
+	msg := decapi.NewMsgBurnNFT(sender, testNFTTokenId, "", sdk.NewInt(1))
+
+	// Prepare transaction arguments
+	msgs := []sdk.Msg{msg}
+	feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
+	memo := ""
+
+	// Create signed transaction
+	tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, account)
+	if err != nil {
+		panic(err)
+	}
+
+	// Broadcast signed transaction
+	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Broadcast transaction nft/burn_nft response", broadcastTxResult)
+
+	blockCreated := make(chan bool)
+
+	go func() {
+	}()
+
+	select {
+	case ok := <-blockCreated:
+		if ok {
+			printAsJSON("block placed in the blockchain", broadcastTxResult)
+		}
+		break
+	case <-time.After(time.Second * 5):
+		printAsJSON("block timeout", broadcastTxResult)
+	}
+}
+
+func exampleBroadcastMsgMintNFT() {
+	// Prepare message arguments
+	sender, err := sdk.AccAddressFromBech32(testSenderAddress)
+	if err != nil {
+		panic(err)
+	}
+	receiver, err := sdk.AccAddressFromBech32(testReceiverAddress)
+	if err != nil {
+		panic(err)
+	}
+	amount := sdk.NewInt(1500000000000000000) // 1.5
+	_ = sdk.NewCoin(testCoin, amount)
+
+	// Prepare message
+	msg := decapi.NewMsgMintNFT(
+		sender,
+		receiver,
+		testNFTTokenId,
+		"", // denom
+		fmt.Sprintf("%s/nfts/%s", hostURL, testNFTTokenId), // tokenURI
+		sdk.NewInt(1), // quantity
+		sdk.NewInt(1), // reserve
+		true,          // allowMint
+	)
+
+	// Prepare transaction arguments
+	msgs := []sdk.Msg{msg}
+	feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
+	memo := ""
+
+	// Create signed transaction
+	tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, account)
+	if err != nil {
+		panic(err)
+	}
+
+	// Broadcast signed transaction
+	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Broadcast transaction nft/mint_nft response", broadcastTxResult)
+}
+
+// printAsJSON prints `obj` in JSON format.
+func printAsJSON(msg string, obj interface{}) {
+	objStr, err := json.MarshalIndent(obj, "", "    ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s:\n%s\n", msg, objStr)
 }
 
 // printAsJSON prints `obj` in JSON format.
