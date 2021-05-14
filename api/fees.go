@@ -50,6 +50,23 @@ const (
 	FeeValidatorSetOffline       Fee = 100
 )
 
+// Fees for `nft/*` messages.
+const (
+	FeeNFTMint         Fee = 0
+	FeeNFTBurn         Fee = 0
+	FeeNFTTransfer     Fee = 0
+	FeeNFTDelegate     Fee = 0
+	FeeNFTUnbound      Fee = 0
+	FeeNFTEditMetadata Fee = 0
+)
+
+// Fees for `swap/*` messages.
+const (
+	FeeSwapHTLT   Fee = 33000
+	FeeSwapRedeem Fee = 0
+	FeeSwapRefund Fee = 0
+)
+
 // EstimateTransactionGasWanted counts complete set of different fees and
 // returns exact gas wanted to successfully execute specified transaction.
 func (api *API) EstimateTransactionGasWanted(tx auth.StdTx) (uint64, error) {
@@ -70,6 +87,34 @@ func (api *API) EstimateTransactionGasWanted(tx auth.StdTx) (uint64, error) {
 // getMessageFee returns amount of fixed units needed to pay for the specified message.
 func (api *API) getMessageFee(msg sdk.Msg) (fee Fee, err error) {
 	switch r := msg.Route(); r {
+	case "nft":
+		switch t := msg.Type(); t {
+		case "burn_nft":
+			fee = FeeNFTBurn
+		case "mint_nft":
+			fee = FeeNFTMint
+		case "edit_nft_metadata":
+			fee = FeeNFTEditMetadata
+		case "transfer_nft":
+			fee = FeeNFTTransfer
+		case "delegate_nft":
+			fee = FeeNFTDelegate
+		case "unbound_nft":
+			fee = FeeNFTUnbound
+		default:
+			err = fmt.Errorf(`unexpected message "nft/%s"`, t)
+		}
+	case "swap":
+		switch t := msg.Type(); t {
+		case "swap_htlt":
+			fee = FeeSwapHTLT
+		case "swap_redeem":
+			fee = FeeSwapRedeem
+		case "swap_refund":
+			fee = FeeSwapRefund
+		default:
+			err = fmt.Errorf(`unexpected message "swap/%s"`, t)
+		}
 	case "coin":
 		switch t := msg.Type(); t {
 		case "create_coin":

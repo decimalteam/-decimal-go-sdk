@@ -3,6 +3,8 @@ package api
 import (
 	"time"
 
+	"github.com/go-resty/resty/v2"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth"
@@ -105,11 +107,12 @@ func newCodec() *codec.Codec {
 	cdc.RegisterConcrete(validator.MsgUnbond{}, "validator/unbond", nil)
 	cdc.RegisterConcrete(validator.MsgEditCandidate{}, "validator/edit_candidate", nil)
 
-	cdc.RegisterConcrete(nft.MsgBurnNFT{}, "nft/msg_burn", nil)
-	cdc.RegisterConcrete(nft.MsgMintNFT{}, "nft/msg_mint", nil)
-	cdc.RegisterConcrete(nft.MsgEditNFTMetadata{}, "nft/msg_edit_metadata", nil)
-	cdc.RegisterConcrete(nft.MsgTransferNFT{}, "nft/msg_transfer", nil)
-	cdc.RegisterConcrete(nft.MsgDelegateNFT{}, "nft/msg_delegate", nil)
+	cdc.RegisterConcrete(nft.MsgBurnNFT{}, "nft/burn_nft", nil)
+	cdc.RegisterConcrete(nft.MsgMintNFT{}, "nft/mint_nft", nil)
+	cdc.RegisterConcrete(nft.MsgEditNFTMetadata{}, "nft/edit_nft_metadata", nil)
+	cdc.RegisterConcrete(nft.MsgTransferNFT{}, "nft/transfer_nft", nil)
+	cdc.RegisterConcrete(nft.MsgDelegateNFT{}, "nft/delegate_nft", nil)
+	cdc.RegisterConcrete(nft.MsgUnboundNFT{}, "nft/unbound_nft", nil)
 
 	cdc.RegisterConcrete(swap.MsgHTLT{}, "swap/msg_htlt", nil)
 	cdc.RegisterConcrete(swap.MsgRedeem{}, "swap/msg_redeem", nil)
