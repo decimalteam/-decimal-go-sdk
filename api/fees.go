@@ -97,10 +97,6 @@ func (api *API) getMessageFee(msg sdk.Msg) (fee Fee, err error) {
 			fee = FeeNFTEditMetadata
 		case "transfer_nft":
 			fee = FeeNFTTransfer
-		case "delegate_nft":
-			fee = FeeNFTDelegate
-		case "unbound_nft":
-			fee = FeeNFTUnbound
 		default:
 			err = fmt.Errorf(`unexpected message "nft/%s"`, t)
 		}
@@ -166,6 +162,10 @@ func (api *API) getMessageFee(msg sdk.Msg) (fee Fee, err error) {
 			fee = FeeValidatorSetOnline
 		case "set_offline":
 			fee = FeeValidatorSetOffline
+		case "delegate_nft":
+			fee = FeeNFTDelegate
+		case "unbond_nft":
+			fee = FeeNFTUnbound
 		default:
 			err = fmt.Errorf(`unexpected message "validator/%s"`, t)
 		}

@@ -25,8 +25,6 @@ type (
 	MsgBuyCoin = coin.MsgBuyCoin
 	// MsgUpdateCoint
 	MsgUpdateCoin = coin.MsgUpdateCoin
-	// MsgIssueCheck
-	MsgIssueCheck = coin.MsgIssueCheck
 	// MsgSellCoin .
 	MsgSellCoin = coin.MsgSellCoin
 	// MsgSellAllCoin .
@@ -45,8 +43,6 @@ var (
 	NewMsgMultiSendCoin = coin.NewMsgMultiSendCoin
 	// NewMsgUpdateCoin creates MsgUpdateCoin message.
 	NewMsgUpdateCoin = coin.NewMsgUpdateCoin
-	// NewMsgIssueCheck creates MsgIssueCheck message.
-	NewMsgIssueCheck = coin.MsgIssueCheck
 	// NewMsgBuyCoin creates MsgBuyCoin message.
 	NewMsgBuyCoin = coin.NewMsgBuyCoin
 	// NewMsgSellCoin creates MsgSellCoin message.
@@ -111,6 +107,10 @@ type (
 	MsgSetOnline = validator.MsgSetOnline
 	// MsgSetOffline .
 	MsgSetOffline = validator.MsgSetOffline
+	// MsgDelegateNFT
+	MsgDelegateNFT = validator.MsgDelegateNFT
+	// MsgUnbondNFT
+	MsgUnbondNFT = validator.MsgUnbondNFT
 )
 
 // Initializing functions.
@@ -127,6 +127,10 @@ var (
 	NewMsgSetOnline = validator.NewMsgSetOnline
 	// NewMsgSetOffline .
 	NewMsgSetOffline = validator.NewMsgSetOffline
+	// NewMsgDelegateNFT
+	NewMsgDelegateNFT = validator.NewMsgDelegateNFT
+	// NewMsgUnbondNFT
+	NewMsgUnbondNFT = validator.NewMsgUnbondNFT
 )
 
 ////////////////////////////////////////////////////////////////
@@ -143,8 +147,6 @@ type (
 	MsgTransferNFT = nft.MsgTransferNFT
 	// MsgEditNFTMetadata
 	MsgEditNFTMetadata = nft.MsgEditNFTMetadata
-	// MsgDelegateNFT
-	MsgDelegateNFT = nft.MsgDelegateNFT
 )
 
 // Initializing functions.
@@ -157,8 +159,6 @@ var (
 	NewMsgTransferNFT = nft.NewMsgTransferNFT
 	// NewMsgEditNFTMetadata
 	NewMsgEditNFTMetadata = nft.NewMsgEditNFTMetadata
-	// NewMsgDelegateNFT
-	NewMsgDelegateNFT = nft.NewMsgDelegateNFT
 )
 
 ////////////////////////////////////////////////////////////////
