@@ -106,11 +106,11 @@ func (api *API) getMessageFee(msg sdk.Msg) (fee Fee, err error) {
 		}
 	case "swap":
 		switch t := msg.Type(); t {
-		case "swap_htlt":
+		case "htlt":
 			fee = FeeSwapHTLT
-		case "swap_redeem":
+		case "redeem":
 			fee = FeeSwapRedeem
-		case "swap_refund":
+		case "refund":
 			fee = FeeSwapRefund
 		default:
 			err = fmt.Errorf(`unexpected message "swap/%s"`, t)

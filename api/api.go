@@ -114,9 +114,9 @@ func newCodec() *codec.Codec {
 	cdc.RegisterConcrete(nft.MsgDelegateNFT{}, "nft/delegate_nft", nil)
 	cdc.RegisterConcrete(nft.MsgUnboundNFT{}, "nft/unbound_nft", nil)
 
-	cdc.RegisterConcrete(swap.MsgHTLT{}, "swap/msg_htlt", nil)
-	cdc.RegisterConcrete(swap.MsgRedeem{}, "swap/msg_redeem", nil)
-	cdc.RegisterConcrete(swap.MsgRefund{}, "swap/msg_refund", nil)
+	cdc.RegisterConcrete(swap.MsgHTLT{}, "swap/htlt", nil)
+	cdc.RegisterConcrete(swap.MsgRedeem{}, "swap/redeem", nil)
+	cdc.RegisterConcrete(swap.MsgRefund{}, "swap/refund", nil)
 
 	//cdc.RegisterConcrete(sdk.MsgSubmitProposal{}, "cosmos-sdk/MsgSubmitProposal", nil)
 	//cdc.RegisterConcrete(swap.MsgRefund{}, "cosmos-sdk/MsgVote", nil)
