@@ -62,7 +62,7 @@ func (api *API) NewSignedTransaction(msgs []sdk.Msg, feeCoins sdk.Coins, memo st
 }
 
 // BroadcastSignedTransactionJSON sends transaction (presented in JSON format) to the node and returns the result.
-func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx) (*BroadcastTxResult, error) {
+func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx, acc *wallet.Account) (*BroadcastTxResult, error) {
 
 	// Marshal transaction to special JSON format
 	txJSONBytes, err := api.codec.MarshalJSON(tx)
@@ -98,6 +98,8 @@ func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx) (*BroadcastTxResul
 		}
 		return nil, fmt.Errorf("received tx error: %s", txError.Error())
 	}
+
+	acc.WithSequence(uint64(acc.Sequence() + 1))
 
 	return &response, nil
 }
