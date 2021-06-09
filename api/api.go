@@ -97,9 +97,6 @@ func newCodec() *codec.Codec {
 	cdc.RegisterConcrete(coin.MsgBuyCoin{}, "coin/buy_coin", nil)
 	cdc.RegisterConcrete(coin.MsgSellCoin{}, "coin/sell_coin", nil)
 	cdc.RegisterConcrete(coin.MsgSellAllCoin{}, "coin/sell_all_coin", nil)
-	cdc.RegisterConcrete(coin.MsgUpdateCoin{}, "coin/update_coin", nil)
-	cdc.RegisterConcrete(coin.MsgRedeemCheck{}, "coin/redeem_check", nil)
-
 	cdc.RegisterConcrete(validator.MsgDeclareCandidate{}, "validator/declare_candidate", nil)
 	cdc.RegisterConcrete(validator.MsgDelegate{}, "validator/delegate", nil)
 	cdc.RegisterConcrete(validator.MsgSetOnline{}, "validator/set_online", nil)
@@ -117,9 +114,6 @@ func newCodec() *codec.Codec {
 	cdc.RegisterConcrete(swap.MsgHTLT{}, "swap/msg_htlt", nil)
 	cdc.RegisterConcrete(swap.MsgRedeem{}, "swap/msg_redeem", nil)
 	cdc.RegisterConcrete(swap.MsgRefund{}, "swap/msg_refund", nil)
-
-	//cdc.RegisterConcrete(sdk.MsgSubmitProposal{}, "cosmos-sdk/MsgSubmitProposal", nil)
-	//cdc.RegisterConcrete(swap.MsgRefund{}, "cosmos-sdk/MsgVote", nil)
 
 	cdc.RegisterConcrete(multisig.MsgCreateWallet{}, "multisig/create_wallet", nil)
 	cdc.RegisterConcrete(multisig.MsgCreateTransaction{}, "multisig/create_transaction", nil)

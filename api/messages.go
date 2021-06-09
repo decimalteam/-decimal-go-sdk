@@ -156,7 +156,7 @@ var (
 	// NewMsgBurnNFT
 	NewMsgBurnNFT = nft.NewMsgBurnNFT
 	// NewMsgTransferNFT
-	NewMsgTransferNFT = nft.NewMsgTransferNFT
+	NewMsgTransferNFT = nft.NewMsgTranfserNFT
 	// NewMsgEditNFTMetadata
 	NewMsgEditNFTMetadata = nft.NewMsgEditNFTMetadata
 )
