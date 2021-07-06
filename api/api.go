@@ -97,7 +97,6 @@ func newCodec() *codec.Codec {
 	cdc.RegisterConcrete(coin.MsgBuyCoin{}, "coin/buy_coin", nil)
 	cdc.RegisterConcrete(coin.MsgSellCoin{}, "coin/sell_coin", nil)
 	cdc.RegisterConcrete(coin.MsgSellAllCoin{}, "coin/sell_all_coin", nil)
-	cdc.RegisterConcrete(coin.MsgUpdateCoin{}, "coin/update_coin", nil)
 	cdc.RegisterConcrete(validator.MsgDeclareCandidate{}, "validator/declare_candidate", nil)
 	cdc.RegisterConcrete(validator.MsgDelegate{}, "validator/delegate", nil)
 	cdc.RegisterConcrete(validator.MsgSetOnline{}, "validator/set_online", nil)
