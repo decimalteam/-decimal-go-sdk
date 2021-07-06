@@ -1,5 +1,16 @@
+bitbucket.org/decimalteam/go-node v0.0.0-20210513110306-1f9867e0bb70 h1:TsqlW+otouYCVe1nbZyfJoXOIH94sPLfA0pMPOIAkvA=
+bitbucket.org/decimalteam/go-node v0.0.0-20210513110306-1f9867e0bb70/go.mod h1:41tt7IJjgT4bVJwBD36RBbFypzf2loUFttfR32yqPf8=
+bitbucket.org/decimalteam/go-node v0.0.0-20210528114812-d1de625e6173 h1:x8Ewt9m6Yjypu8HqfWX9MhlY7f8N39kP8PUWsO/cAO4=
+bitbucket.org/decimalteam/go-node v0.0.0-20210528114812-d1de625e6173/go.mod h1:41tt7IJjgT4bVJwBD36RBbFypzf2loUFttfR32yqPf8=
 bitbucket.org/decimalteam/go-node v0.0.0-20210608071223-65526dd8ba02 h1:d/EtBuGcL3fl01Bn4d//SC3x7DJ2d38L2saWzfa59WI=
 bitbucket.org/decimalteam/go-node v0.0.0-20210608071223-65526dd8ba02/go.mod h1:41tt7IJjgT4bVJwBD36RBbFypzf2loUFttfR32yqPf8=
+bitbucket.org/decimalteam/go-node v1.0.4 h1:MEsyZUV7lMQekuRTYEu8zGUo0zhmuXfCjR+nLnwMow8=
+bitbucket.org/decimalteam/go-node v1.0.5-0.20201229124206-10c510f351f5 h1:2vesmL8H9fDX78F/5Aqq/oSKIJYDJ4s9EWgMR7rcU0c=
+bitbucket.org/decimalteam/go-node v1.0.5-0.20201229124206-10c510f351f5/go.mod h1:41tt7IJjgT4bVJwBD36RBbFypzf2loUFttfR32yqPf8=
+bitbucket.org/decimalteam/go-node v1.0.5-0.20210120120458-cac414dec394 h1:DNXA+65QPqjUo9GTnM3hrjFdkQ1NBGFSWAonW17KdOA=
+bitbucket.org/decimalteam/go-node v1.0.5-0.20210120120458-cac414dec394/go.mod h1:41tt7IJjgT4bVJwBD36RBbFypzf2loUFttfR32yqPf8=
+bitbucket.org/decimalteam/go-node v1.0.5-0.20210603132356-21bbb7445ee2 h1:9vBBWqJJOPNICj+YATZ50MUVM2R5+wqIZnh5k8GlPAs=
+bitbucket.org/decimalteam/go-node v1.0.5-0.20210603132356-21bbb7445ee2/go.mod h1:41tt7IJjgT4bVJwBD36RBbFypzf2loUFttfR32yqPf8=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/99designs/keyring v1.1.3 h1:mEV3iyZWjkxQ7R8ia8GcG97vCX5zQQ7n4o8R2BylwQY=
