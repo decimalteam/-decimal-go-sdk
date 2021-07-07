@@ -173,6 +173,14 @@ type (
 	MsgSwapRedeem = swap.MsgRedeem
 	// MsgSwapRefund
 	MsgSwapRefund = swap.MsgRefund
+	// MsgSwapInitialize
+	MsgSwapInitialize = swap.MsgSwapInitialize
+	// MsgChainDeactivate
+	MsgChainDeactivate = swap.MsgChainDeactivate
+	// MsgChainActivate
+	MsgChainActivate = swap.MsgChainActivate
+	// MsgRedeemV2
+	MsgRedeemV2 = swap.MsgRedeemV2
 )
 
 // Initializing functions.
@@ -183,4 +191,12 @@ var (
 	NewMsgSwapRedeem = swap.NewMsgRedeem
 	// NewMsgSwapRefund
 	NewMsgSwapRefund = swap.NewMsgRefund
+	// NewMsgSwapInitialize
+	NewMsgSwapInitialize = swap.NewMsgSwapInitialize
+	// NewMsgChainDeactivate
+	NewMsgChainDeactivate = swap.NewMsgChainDeactivate
+	// NewMsgChainActivate
+	NewMsgChainActivate = swap.NewMsgChainActivate
+	// NewMsgRedeemV2
+	NewMsgRedeemV2 = swap.NewMsgRedeemV2
 )
