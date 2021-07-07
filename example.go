@@ -74,13 +74,12 @@ func init() {
 func main() {
 
 	// Request everything from the API
-	exampleRequests()
+	//exampleRequests()
 
 	// Create and broadcast transactions
 	exampleBroadcastMsgSendCoin()
 
 	exampleBroadcastMsgMintNFT()
-	exampleBroadcastMsgBurnNFT()
 }
 
 ////////////////////////////////////////////////////////////////
@@ -217,57 +216,13 @@ func exampleBroadcastMsgSendCoin() {
 	}
 
 	// Broadcast signed transaction
-	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx)
+	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx, account)
 	if err != nil {
 		panic(err)
 	}
 	printAsJSON("Broadcast transaction (in JSON format) response", broadcastTxResult)
 
 	// TODO: Block code executing until the transaction is placed in a block?
-}
-
-func exampleBroadcastMsgBurnNFT() {
-	// Prepare message arguments
-	sender, err := sdk.AccAddressFromBech32(testSenderAddress)
-	if err != nil {
-		panic(err)
-	}
-
-	// Prepare message
-	msg := decapi.NewMsgBurnNFT(sender, testNFTTokenId, "", sdk.NewInt(1))
-
-	// Prepare transaction arguments
-	msgs := []sdk.Msg{msg}
-	feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
-	memo := ""
-
-	// Create signed transaction
-	tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, account)
-	if err != nil {
-		panic(err)
-	}
-
-	// Broadcast signed transaction
-	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Broadcast transaction nft/burn_nft response", broadcastTxResult)
-
-	blockCreated := make(chan bool)
-
-	go func() {
-	}()
-
-	select {
-	case ok := <-blockCreated:
-		if ok {
-			printAsJSON("block placed in the blockchain", broadcastTxResult)
-		}
-		break
-	case <-time.After(time.Second * 5):
-		printAsJSON("block timeout", broadcastTxResult)
-	}
 }
 
 func exampleBroadcastMsgMintNFT() {
@@ -307,20 +262,11 @@ func exampleBroadcastMsgMintNFT() {
 	}
 
 	// Broadcast signed transaction
-	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx)
+	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx, account)
 	if err != nil {
 		panic(err)
 	}
 	printAsJSON("Broadcast transaction nft/mint_nft response", broadcastTxResult)
-}
-
-// printAsJSON prints `obj` in JSON format.
-func printAsJSON(msg string, obj interface{}) {
-	objStr, err := json.MarshalIndent(obj, "", "    ")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%s:\n%s\n", msg, objStr)
 }
 
 // printAsJSON prints `obj` in JSON format.

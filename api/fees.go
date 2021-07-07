@@ -65,6 +65,10 @@ const (
 	FeeSwapHTLT   Fee = 33000
 	FeeSwapRedeem Fee = 0
 	FeeSwapRefund Fee = 0
+	FeeSwapRedeemV2 Fee = 0
+	FeeSwapInitialize Fee = 0
+	FeeChainActivate Fee = 0
+	FeeSwapDeactivate Fee = 0
 )
 
 // EstimateTransactionGasWanted counts complete set of different fees and
@@ -108,6 +112,14 @@ func (api *API) getMessageFee(msg sdk.Msg) (fee Fee, err error) {
 			fee = FeeSwapRedeem
 		case "refund":
 			fee = FeeSwapRefund
+		case "swap_initialize":
+			fee = FeeSwapInitialize
+		case "redeem_v2":
+			fee = FeeSwapRedeemV2
+		case "chain_activate":
+			fee = FeeChainActivate
+		case "chain_deactivate":
+			fee = FeeSwapDeactivate
 		default:
 			err = fmt.Errorf(`unexpected message "swap/%s"`, t)
 		}
