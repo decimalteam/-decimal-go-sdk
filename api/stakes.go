@@ -30,11 +30,13 @@ type Stake struct {
 	UnbondAmount string `json:"unbondAmount"`
 }
 
+// TODO: undefined this API in REST/RPC.
+
 // Stakes requests full information about stakes from the account with specified address.
 func (api *API) Stakes(address string) ([]*StakesResult, error) {
 
 	url := fmt.Sprintf("/address/%s/stakes", address)
-	res, err := api.client.R().Get(url)
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return nil, err
 	}

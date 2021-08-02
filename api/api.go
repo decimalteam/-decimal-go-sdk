@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -28,24 +29,71 @@ type API struct {
 	config *sdk.Config
 	codec  *codec.Codec
 
-	// Resty
-	client *resty.Client
+	// Direct/Gate
+	directConn *DirectConn
+
+	// Resty (REST, RPC)
+	client *clientConn
 
 	// Parameters
 	chainID string
 }
 
+// Ports for REST/RPC interfaces.
+type DirectConn struct {
+	// ":port"
+	PortREST string
+	PortRPC  string
+}
+
+type clientConn struct {
+	rest *resty.Client
+	rpc  *resty.Client
+}
+
 // NewAPI creates Decimal API instance.
-func NewAPI(hostURL string) *API {
-	return NewAPIWithClient(hostURL, resty.New().SetTimeout(time.Minute))
+// If directConn is nil then used gateway;
+// If directConn is not nil AND directConn.PortREST = "" then used defaultPortREST (:1317);
+// If directConn is not nil AND directConn.PortRPC  = "" then used defaultPortRPC (:26657);
+func NewAPI(hostURL string, directConn *DirectConn) *API {
+	return NewAPIWithClient(
+		hostURL,
+		resty.New().SetTimeout(time.Minute),
+		resty.New().SetTimeout(time.Minute),
+		directConn,
+	)
 }
 
 // NewAPIWithClient creates Decimal API instance with custom Resty client.
-func NewAPIWithClient(hostURL string, client *resty.Client) *API {
+func NewAPIWithClient(hostURL string, restClient *resty.Client, rpcClient *resty.Client, directConn *DirectConn) *API {
+	const (
+		defaultPortREST = ":1317"
+		defaultPortRPC  = ":26657"
+	)
+	var (
+		hostREST = hostURL
+		hostRPC  = hostURL
+	)
+
+	if directConn != nil {
+		if directConn.PortREST == "" {
+			directConn.PortREST = defaultPortREST
+		}
+		if directConn.PortRPC == "" {
+			directConn.PortRPC = defaultPortRPC
+		}
+		hostREST += directConn.PortREST
+		hostRPC += directConn.PortRPC
+	}
+
 	return &API{
 		config: newConfig(),
 		codec:  newCodec(),
-		client: client.SetHostURL(hostURL),
+		client: &clientConn{
+			rest: restClient.SetHostURL(hostREST),
+			rpc:  rpcClient.SetHostURL(hostRPC),
+		},
+		directConn: directConn,
 	}
 }
 
@@ -61,8 +109,26 @@ func (api *API) Codec() *codec.Codec {
 
 // ChainID retrieves chain ID.
 func (api *API) ChainID() (chainID string, err error) {
-	url := "/rpc/genesis/chain"
-	res, err := api.client.R().Get(url)
+	type respDirectChainID struct {
+		Result struct {
+			NodeInfo struct {
+				Network string `json:"network"`
+			} `json:"node_info"`
+		} `json:"result"`
+	}
+
+	var (
+		dres = respDirectChainID{}
+		url  = ""
+	)
+
+	if api.directConn == nil {
+		url = "/rpc/genesis/chain"
+	} else {
+		url = "/status"
+	}
+
+	res, err := api.client.rpc.R().Get(url)
 	if err != nil {
 		return
 	}
@@ -70,7 +136,17 @@ func (api *API) ChainID() (chainID string, err error) {
 		err = NewResponseError(res)
 		return
 	}
-	api.chainID = string(res.Body())
+
+	if api.directConn == nil {
+		api.chainID = string(res.Body())
+	} else {
+		err = json.Unmarshal(res.Body(), &dres)
+		if err != nil {
+			return
+		}
+		api.chainID = dres.Result.NodeInfo.Network
+	}
+
 	chainID = api.chainID
 	return
 }

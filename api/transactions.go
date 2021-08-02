@@ -70,9 +70,17 @@ type TxAttributeBase64 struct {
 // NOTE: It is expected that `txHash` encoded in hex format and written
 // in capital letters and without "0x" at the beginning.
 func (api *API) Transaction(txHash string) (*TransactionResult, error) {
+	var (
+		url = ""
+	)
 
-	url := fmt.Sprintf("/rpc/tx?hash=0x%s", txHash)
-	res, err := api.client.R().Get(url)
+	if api.directConn == nil {
+		url = fmt.Sprintf("/rpc/tx?hash=0x%s", txHash)
+	} else {
+		url = fmt.Sprintf("/tx?hash=0x%s", txHash)
+	}
+
+	res, err := api.client.rpc.R().Get(url)
 	if err != nil {
 		return nil, err
 	}

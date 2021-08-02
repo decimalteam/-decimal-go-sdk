@@ -92,11 +92,14 @@ type MultisigAccount struct {
 	UpdatedAt time.Time         `json:"updatedAt"`
 }
 
+// TODO: undefined interfaces with miltisigs in REST/RPC.
+// https://bitbucket.org/decimalteam/go-node/src/master/x/multisig/client/rest/query.go
+
 // MultisigWallets requests full list of multisig wallets which has account with specified address as participant.
 func (api *API) MultisigWallets(address string) ([]*MultisigWalletsResult, error) {
 
 	url := fmt.Sprintf("/address/%s/multisigs", address)
-	res, err := api.client.R().Get(url)
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +125,7 @@ func (api *API) MultisigWallets(address string) ([]*MultisigWalletsResult, error
 func (api *API) MultisigWallet(address string) (*MultisigWalletResult, error) {
 
 	url := fmt.Sprintf("/multisig/%s", address)
-	res, err := api.client.R().Get(url)
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +151,7 @@ func (api *API) MultisigWallet(address string) (*MultisigWalletResult, error) {
 func (api *API) MultisigTransactions(address string) ([]*MultisigTransactionResult, error) {
 
 	url := fmt.Sprintf("/multisig/%s/txs", address)
-	res, err := api.client.R().Get(url)
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return nil, err
 	}

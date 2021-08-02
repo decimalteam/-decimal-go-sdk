@@ -26,8 +26,18 @@ type NFTResponse struct {
 }
 
 func (api *API) NFT(id string) (*NFT, error) {
-	url := fmt.Sprintf("/nfts/%s", id)
-	res, err := api.client.R().Get(url)
+	var (
+		url = ""
+	)
+
+	// TODO: test with directConn.
+	if api.directConn == nil {
+		url = fmt.Sprintf("/nfts/%s", id)
+	} else {
+		url = fmt.Sprintf("/nft/collection/%s", id)
+	}
+
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return nil, err
 	}

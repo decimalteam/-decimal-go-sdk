@@ -58,9 +58,18 @@ type ProposalResult struct {
 
 // Proposals requests full information about all govs.
 func (api *API) Proposals() ([]ProposalResult, error) {
-	url := "/proposals"
+	var (
+		url = ""
+	)
 
-	res, err := api.client.R().Get(url)
+	// TODO: test with directConn.
+	if api.directConn == nil {
+		url = "/proposals"
+	} else {
+		url = "/gov/proposals"
+	}
+
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -85,9 +94,18 @@ func (api *API) Proposals() ([]ProposalResult, error) {
 
 // Proposal requests full information about gov with specified id.
 func (api *API) Proposal(id int64) (ProposalResult, error) {
+	var (
+		url = ""
+	)
 
-	url := fmt.Sprintf("/proposalById/%d", id)
-	res, err := api.client.R().Get(url)
+	// TODO: test with directConn.
+	if api.directConn == nil {
+		url = fmt.Sprintf("/proposalById/%d", id)
+	} else {
+		url = fmt.Sprintf("/gov/proposals/%d", id)
+	}
+
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return ProposalResult{}, err
 	}

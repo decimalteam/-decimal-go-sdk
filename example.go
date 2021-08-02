@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	hostURL = "https://devnet-gate.decimalchain.com/api"
+	// hostURL = "https://devnet-gate.decimalchain.com/api"
+	hostURL = "http://localhost"
 
 	testMnemonicWords              = "repair furnace west loud peasant false six hockey poem tube now alien service phone hazard winter favorite away sand fuel describe version tragic vendor"
 	testMnemonicPassphrase         = ""
@@ -41,8 +42,8 @@ var err error
 func init() {
 	rand.Seed(time.Now().UnixNano())
 
-	// Create Decimal API instance
-	api = decapi.NewAPI(hostURL)
+	// Create Decimal API instance with default direct connection
+	api = decapi.NewAPI(hostURL, &decapi.DirectConn{})
 
 	// Create account from the mnemonic
 	account, err = wallet.NewAccountFromMnemonicWords(testMnemonicWords, testMnemonicPassphrase)
@@ -74,7 +75,7 @@ func init() {
 func main() {
 
 	// Request everything from the API
-	//exampleRequests()
+	exampleRequests()
 
 	// Create and broadcast transactions
 	exampleBroadcastMsgSendCoin()
