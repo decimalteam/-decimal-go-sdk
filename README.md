@@ -50,7 +50,7 @@ import (
 
 const (
     ...
-	hostURL = "https://devnet-gate.decimalchain.com/api"
+	hostURL = "https://testnet-gate.decimalchain.com/api"
 )
 
 func main() {
@@ -162,16 +162,20 @@ const (
 func main() {
 	...
 	// Pack and sign transaction
-	tx, err := createTransactionNFT(
-		api,
-		account,
-		testReceiverAddress,
-		testCoin,
+	reserve, ok := sdk.NewIntFromString("100000000000000000000")
+	if !ok {
+		log.Println("invalid reserve")
+	}
+
+	// Prepare message
+	msg := decapi.NewMsgMintNFT(
+		sender,
+		receiver,
 		testNFTTokenId,
-		"", // denom
+		"cat", // denom
 		fmt.Sprintf("%s/nfts/%s", hostURL, testNFTTokenId), // tokenURI
 		sdk.NewInt(1), // quantity
-		sdk.NewInt(1), // reserve
+		reserve,       // reserve
 		true,          // allowMint
 	)
 	if err != nil {

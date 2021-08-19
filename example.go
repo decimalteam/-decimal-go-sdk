@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	hostURL = "https://devnet-gate.decimalchain.com/api"
+	hostURL = "https://testnet-gate.decimalchain.com/api"
 
 	testMnemonicWords              = "repair furnace west loud peasant false six hockey poem tube now alien service phone hazard winter favorite away sand fuel describe version tragic vendor"
 	testMnemonicPassphrase         = ""
@@ -238,15 +238,20 @@ func exampleBroadcastMsgMintNFT() {
 	amount := sdk.NewInt(1500000000000000000) // 1.5
 	_ = sdk.NewCoin(testCoin, amount)
 
+	reserve, ok := sdk.NewIntFromString("100000000000000000000")
+	if !ok {
+		log.Println("invalid reserve")
+	}
+
 	// Prepare message
 	msg := decapi.NewMsgMintNFT(
 		sender,
 		receiver,
 		testNFTTokenId,
-		"", // denom
+		"cat", // denom
 		fmt.Sprintf("%s/nfts/%s", hostURL, testNFTTokenId), // tokenURI
 		sdk.NewInt(1), // quantity
-		sdk.NewInt(1), // reserve
+		reserve,       // reserve
 		true,          // allowMint
 	)
 
