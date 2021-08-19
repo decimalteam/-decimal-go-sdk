@@ -161,21 +161,23 @@ const (
 
 func main() {
 	...
-	// Pack and sign transaction
-	reserve, ok := sdk.NewIntFromString("100000000000000000000")
+
+  reserve, ok := sdk.NewIntFromString("100000000000000000000")
 	if !ok {
 		log.Println("invalid reserve")
 	}
 
-	// Prepare message
-	msg := decapi.NewMsgMintNFT(
-		sender,
-		receiver,
+	// Pack and sign transaction
+	tx, err := createTransactionNFT(
+		api,
+		account,
+		testReceiverAddress,
+		testCoin,
 		testNFTTokenId,
-		"cat", // denom
+		"", // denom
 		fmt.Sprintf("%s/nfts/%s", hostURL, testNFTTokenId), // tokenURI
 		sdk.NewInt(1), // quantity
-		reserve,       // reserve
+		reserve, // reserve
 		true,          // allowMint
 	)
 	if err != nil {
