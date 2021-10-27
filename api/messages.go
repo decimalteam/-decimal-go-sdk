@@ -83,6 +83,8 @@ var (
 
 // Messages.
 type (
+	// MsgSoftwareUpgradeProposal .
+	MsgSoftwareUpgradeProposal = gov.MsgSoftwareUpgradeProposal
 	// MsgSubmitProposal .
 	MsgSubmitProposal = gov.MsgSubmitProposal
 	// MsgVote .
@@ -139,14 +141,16 @@ var (
 
 // Messages.
 type (
-	// MsgMintNFT
+	// MsgMintNFT .
 	MsgMintNFT = nft.MsgMintNFT
-	// MsgBurnNFT
+	// MsgBurnNFT .
 	MsgBurnNFT = nft.MsgBurnNFT
-	// MsgTransferNFT
+	// MsgTransferNFT .
 	MsgTransferNFT = nft.MsgTransferNFT
-	// MsgEditNFTMetadata
+	// MsgEditNFTMetadata .
 	MsgEditNFTMetadata = nft.MsgEditNFTMetadata
+	// MsgUpdateReserveNFT .
+	MsgUpdateReserveNFT = nft.MsgUpdateReserveNFT
 )
 
 // Initializing functions.
@@ -159,6 +163,8 @@ var (
 	NewMsgTransferNFT = nft.NewMsgTranfserNFT
 	// NewMsgEditNFTMetadata
 	NewMsgEditNFTMetadata = nft.NewMsgEditNFTMetadata
+	// NewMsgUpdateReserveNFT
+	NewMsgUpdateReserveNFT = nft.NewMsgUpdateReserveNFT
 )
 
 ////////////////////////////////////////////////////////////////

@@ -11,6 +11,7 @@ import (
 
 	"bitbucket.org/decimalteam/go-node/config"
 	"bitbucket.org/decimalteam/go-node/x/coin"
+	"bitbucket.org/decimalteam/go-node/x/gov"
 	"bitbucket.org/decimalteam/go-node/x/multisig"
 	"bitbucket.org/decimalteam/go-node/x/nft"
 	"bitbucket.org/decimalteam/go-node/x/swap"
@@ -113,6 +114,7 @@ func newCodec() *codec.Codec {
 	cdc.RegisterConcrete(nft.MsgMintNFT{}, "nft/msg_mint", nil)
 	cdc.RegisterConcrete(nft.MsgEditNFTMetadata{}, "nft/msg_edit_metadata", nil)
 	cdc.RegisterConcrete(nft.MsgTransferNFT{}, "nft/msg_transfer", nil)
+	cdc.RegisterConcrete(nft.MsgUpdateReserveNFT{}, "nft/update_reserve", nil)
 
 	cdc.RegisterConcrete(swap.MsgHTLT{}, "swap/msg_htlt", nil)
 	cdc.RegisterConcrete(swap.MsgRedeem{}, "swap/msg_redeem", nil)
@@ -125,6 +127,11 @@ func newCodec() *codec.Codec {
 	cdc.RegisterConcrete(multisig.MsgCreateWallet{}, "multisig/create_wallet", nil)
 	cdc.RegisterConcrete(multisig.MsgCreateTransaction{}, "multisig/create_transaction", nil)
 	cdc.RegisterConcrete(multisig.MsgSignTransaction{}, "multisig/sign_transaction", nil)
+
+	cdc.RegisterConcrete(gov.MsgSubmitProposal{}, "cosmos-sdk/MsgSubmitProposal", nil)
+	cdc.RegisterConcrete(gov.MsgVote{}, "cosmos-sdk/MsgVote", nil)
+	cdc.RegisterConcrete(gov.MsgSoftwareUpgradeProposal{}, "cosmos-sdk/MsgSoftwareUpgradeProposal", nil)
+
 	auth.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	cdc.Seal()
