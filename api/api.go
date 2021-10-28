@@ -93,7 +93,7 @@ func newCodec() *codec.Codec {
 	cdc := codec.New()
 	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
 	cdc.RegisterConcrete(coin.MsgCreateCoin{}, "coin/create_coin", nil)
-	//cdc.RegisterConcrete(coin.MsgSendCoin{}, "coin/send_coin", nil)
+	cdc.RegisterConcrete(coin.MsgSendCoin{}, "coin/send_coin", nil)
 	cdc.RegisterConcrete(coin.MsgMultiSendCoin{}, "coin/multi_send_coin", nil)
 	cdc.RegisterConcrete(coin.MsgBuyCoin{}, "coin/buy_coin", nil)
 	cdc.RegisterConcrete(coin.MsgSellCoin{}, "coin/sell_coin", nil)
