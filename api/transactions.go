@@ -35,6 +35,18 @@ type TxResult struct {
 	Codespace string          `json:"codespace"`
 }
 
+// TransactionByHashResponse contains API response.
+type TxResponse struct {
+	OK     bool     `json:"ok"`
+	Result *TxCheck `json:"result"`
+}
+
+// TxResult contains API response fields.
+type TxCheck struct {
+	Hash   string `json:"hash"`
+	Status string `json:"status"`
+}
+
 // TxLog contains API response fields.
 type TxLog struct {
 	MsgIndex uint64    `json:"msg_index"`
@@ -95,6 +107,33 @@ func (api *API) Transaction(txHash string) (*TransactionResult, error) {
 	txLogs := []TxLog{}
 	json.Unmarshal([]byte(response.Result.TxResult.Log), &txLogs)
 	response.Result.TxResult.LogParsed = txLogs
+
+	return response.Result, nil
+}
+
+// Transaction requests information about transaction with specified hash.
+// Used to check the status of transactions.
+func (api *API) CheckTransaction(txHash string) (*TxCheck, error) {
+	url := fmt.Sprintf("/tx/%s", txHash)
+	res, err := api.client.R().Get(url)
+
+	if err != nil {
+		return nil, err
+	}
+	if res.IsError() {
+		return nil, NewResponseError(res)
+	}
+
+	response := TxResponse{}
+	err = json.Unmarshal(res.Body(), &response)
+	if err != nil || !response.OK {
+		responseError := Error{}
+		err = json.Unmarshal(res.Body(), &responseError)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
+	}
 
 	return response.Result, nil
 }
