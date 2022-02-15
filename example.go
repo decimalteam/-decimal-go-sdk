@@ -25,7 +25,7 @@ const (
 	testMultisigParticipantAddress = "dx173lnn7jjuym5rwp23aufhnwshylrdemcswtcg5"
 	testMultisigAddress            = "dx1kgnzuwwgzhecyk0dn62sxmp4wyukvv3ekjqyy6"
 	testCoin                       = "tdel"
-	testTxHash                     = "F7BEE024F6EECD0909EF90B5C6A46FE6AFD7AEF061EE02BB73F800960EF57326"
+	testTxHash                     = "22EAE3E30713B1CC319FDDFCA0F47E94CC4BB94CC2052EBC1A255B53D27D05B7"
 	testNFTTokenId                 = "n46sJWaSEgJ0Qyie3pelWci7jCI9mN1Wi0QFujHKSenbDAWuxFOjdCfhQmB02lR2"
 )
 
@@ -116,13 +116,6 @@ func exampleRequests() {
 		panic(err)
 	}
 	printAsJSON("Transaction response", tx)
-
-	// Request information about transaction with specific hash (for check status)
-	checkTx, err := api.CheckTransaction(testTxHash)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Check transaction response", checkTx)
 
 	// Request information about all candidates
 	candidates, err := api.Candidates()

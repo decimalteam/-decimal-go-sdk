@@ -56,7 +56,7 @@ func (api *API) Address(address string) (*AddressResult, error) {
 
 	url := fmt.Sprintf("/address/%s", address)
 	res, err := api.client.R().Get(url)
-	fmt.Printf("Current chain ID: %s\n", res)
+
 	if err != nil {
 		return nil, err
 	}
