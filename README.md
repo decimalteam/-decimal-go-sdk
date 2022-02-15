@@ -279,6 +279,27 @@ func main() {
 ...
 ```
 
+### Check status transaction (request via API)
+```go
+...
+
+const (
+	testTxHash = "F7BEE024F6EECD0909EF90B5C6A46FE6AFD7AEF061EE02BB73F800960EF57326"
+)
+
+func main() {
+    ...
+	// Request information about transaction with specific hash (for check status)
+	checkTx, err := api.CheckTransaction(testTxHash)
+	if err != nil {
+		panic(err)
+	}
+	printAsJSON("Check transaction response", checkTx)
+}
+
+...
+```
+
 ### Candidates information
 ```go
 ...

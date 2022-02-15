@@ -28,11 +28,13 @@ type CoinResult struct {
 	Reserve     string `json:"reserve"`
 	Volume      string `json:"volume"`
 	LimitVolume string `json:"limitVolume"`
+	PriceUSD    string `json:"priceUSD"`
 
-	Creator string `json:"creator"` // Address of account created the coin
-	TxHash  string `json:"txHash"`  // Hash of transaction in which the coin was created
-	BlockID uint64 `json:"blockId"` // Number of block in which the coin was created
-	Avatar  string `json:"avatar"`  // Optional avatar info presented in base64 format
+	Creator         string `json:"creator"` // Address of account created the coin
+	TxHash          string `json:"txHash"`  // Hash of transaction in which the coin was created
+	BlockID         uint64 `json:"blockId"` // Number of block in which the coin was created
+	Avatar          string `json:"avatar"`  // Optional avatar info presented in base64 format
+	ContractAddress string `json:"contractAddress"`
 }
 
 // Coin requests full information about coin with specified symbol.
