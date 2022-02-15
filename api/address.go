@@ -18,13 +18,37 @@ type AddressResponse struct {
 
 // AddressResult contains API response fields.
 type AddressResult struct {
-	ID         uint64            `json:"id"`
-	Address    string            `json:"address"`
-	Type       string            `json:"type"`
-	Nonce      string            `json:"nonce"`
-	Balance    map[string]string `json:"balance"`
-	BalanceNft []string          `json:"balanceNft"`
-	Txes       uint64            `json:"txes"`
+	ID         uint64              `json:"id"`
+	Address    string              `json:"address"`
+	Type       string              `json:"type"`
+	Nonce      string              `json:"nonce"`
+	Balance    map[string]string   `json:"balance"`
+	BalanceNft []*BalanceNftResult `json:"balanceNft"`
+	Txes       uint64              `json:"txes"`
+}
+
+type BalanceNftResult struct {
+	NftId      string                     `json:"nftId"`
+	Collection string                     `json:"collection"`
+	Amount     string                     `json:"amount"`
+	NftReserve []*BalanceNftReserveResult `json:"nftReserve"`
+	NftStake   []*BalanceNftStakeResult   `json:"nftStake"`
+}
+
+type BalanceNftReserveResult struct {
+	SubTokenId  string `json:"subTokenId"`
+	Reserve     string `json:"reserve"`
+	Address     string `json:"address"`
+	Delegated   bool   `json:"delegated"`
+	ValidatorId string `json:"validatorId"`
+	Unbonded    bool   `json:"unbonded"`
+}
+
+type BalanceNftStakeResult struct {
+	NftId          string `json:"nftId"`
+	SubTokenId     string `json:"subTokenId"`
+	BaseQuantity   string `json:"baseQuantity"`
+	UnbondQuantity string `json:"unbondQuantity"`
 }
 
 // Address requests full information about specified address.
@@ -32,6 +56,7 @@ func (api *API) Address(address string) (*AddressResult, error) {
 
 	url := fmt.Sprintf("/address/%s", address)
 	res, err := api.client.R().Get(url)
+	fmt.Printf("Current chain ID: %s\n", res)
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +66,7 @@ func (api *API) Address(address string) (*AddressResult, error) {
 
 	response := AddressResponse{}
 	err = json.Unmarshal(res.Body(), &response)
+
 	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
