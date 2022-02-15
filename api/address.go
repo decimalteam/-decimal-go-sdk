@@ -18,10 +18,13 @@ type AddressResponse struct {
 
 // AddressResult contains API response fields.
 type AddressResult struct {
-	ID      uint64            `json:"id"`
-	Address string            `json:"address"`
-	Nonce   uint64            `json:"nonce"`
-	Balance map[string]string `json:"balance"`
+	ID         uint64            `json:"id"`
+	Address    string            `json:"address"`
+	Type       string            `json:"type"`
+	Nonce      string            `json:"nonce"`
+	Balance    map[string]string `json:"balance"`
+	BalanceNft []string          `json:"balanceNft"`
+	Txes       uint64            `json:"txes"`
 }
 
 // Address requests full information about specified address.
