@@ -56,7 +56,6 @@ func (api *API) Address(address string) (*AddressResult, error) {
 
 	url := fmt.Sprintf("/address/%s", address)
 	res, err := api.client.R().Get(url)
-
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,6 @@ func (api *API) Address(address string) (*AddressResult, error) {
 
 	response := AddressResponse{}
 	err = json.Unmarshal(res.Body(), &response)
-
 	if err != nil || !response.OK {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
