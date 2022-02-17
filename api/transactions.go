@@ -71,7 +71,7 @@ type TxAttributeBase64 struct {
 // in capital letters and without "0x" at the beginning.
 func (api *API) Transaction(txHash string) (*TransactionResult, error) {
 
-	url := fmt.Sprintf("/rpc/tx?hash=0x%s", txHash)
+	url := fmt.Sprintf("/rpc/tx?hash=%s", txHash)
 	res, err := api.client.R().Get(url)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (api *API) Transaction(txHash string) (*TransactionResult, error) {
 	response := TransactionResponse{}
 	err = json.Unmarshal(res.Body(), &response)
 	if err != nil || response.Result == nil {
-		responseError := Error{}
+		responseError := JsonRPCError{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
 			return nil, err

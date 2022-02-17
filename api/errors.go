@@ -67,3 +67,26 @@ type TxError struct {
 func (e *TxError) Error() string {
 	return fmt.Sprintf("height: %s, txHash: %s, code: %d, raw_log: \"%s\"", e.Height, e.TxHash, e.Code, e.RawLog)
 }
+
+////////////////////////////////////////////////////////////////
+// JsonRPCError - contains Decimal Node error response fields.
+////////////////////////////////////////////////////////////////
+
+// JsonRPCError contains API response.
+type JsonRPCError struct {
+	JSONRPC       string               `json:"jsonrpc"`
+	ID            int64                `json:"id"`
+	InternalError JsonRPCInternalError `json:"error"`
+}
+
+type JsonRPCInternalError struct {
+	Code    int64  `json:"code"`
+	Message string `json:"message"`
+	Data    string `json:"data"`
+}
+
+// Error returns error info as string.
+func (e *JsonRPCError) Error() string {
+	return fmt.Sprintf("statusCode: %d, message: \"%s\", data: \"%s\"", e.InternalError.Code,
+		e.InternalError.Message, e.InternalError.Data)
+}
