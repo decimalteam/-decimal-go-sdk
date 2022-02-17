@@ -84,12 +84,17 @@ type MultisigWalletOwner struct {
 
 // MultisigAccount contains info about multisig wallet underlying account.
 type MultisigAccount struct {
-	ID        uint64            `json:"id"`
-	Address   string            `json:"address"`
-	Type      string            `json:"type"`
-	Balance   map[string]string `json:"balance"`
-	CreatedAt time.Time         `json:"createdAt"`
-	UpdatedAt time.Time         `json:"updatedAt"`
+	ID        uint64                  `json:"id"`
+	Address   string                  `json:"address"`
+	Type      string                  `json:"type"`
+	Balance   map[string]BalanceEntry `json:"balance"`
+	CreatedAt time.Time               `json:"createdAt"`
+	UpdatedAt time.Time               `json:"updatedAt"`
+}
+
+type BalanceEntry struct {
+	Value  string `json:"value"`
+	Avatar string `json:"avatar"`
 }
 
 // MultisigWallets requests full list of multisig wallets which has account with specified address as participant.
