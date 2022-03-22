@@ -57,10 +57,20 @@ type ProposalResult struct {
 }
 
 // Proposals requests full information about all govs.
+// Gateway: ok, RPC/REST: none
 func (api *API) Proposals() ([]ProposalResult, error) {
-	url := "/proposals"
+	var (
+		url = ""
+	)
 
-	res, err := api.client.R().Get(url)
+	// TODO: test with directConn.
+	if api.directConn == nil {
+		url = "/proposals"
+	} else {
+		url = "/gov/proposals"
+	}
+
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +81,6 @@ func (api *API) Proposals() ([]ProposalResult, error) {
 	response := ProposalsResponse{}
 	err = json.Unmarshal(res.Body(), &response)
 	if err != nil || !response.OK {
-		fmt.Println(err)
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
@@ -84,10 +93,20 @@ func (api *API) Proposals() ([]ProposalResult, error) {
 }
 
 // Proposal requests full information about gov with specified id.
+// Gateway: ok, RPC/REST: none
 func (api *API) Proposal(id int64) (ProposalResult, error) {
+	var (
+		url = ""
+	)
 
-	url := fmt.Sprintf("/proposalById/%d", id)
-	res, err := api.client.R().Get(url)
+	// TODO: test with directConn.
+	if api.directConn == nil {
+		url = fmt.Sprintf("/proposalById/%d", id)
+	} else {
+		url = fmt.Sprintf("/gov/proposals/%d", id)
+	}
+
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return ProposalResult{}, err
 	}
@@ -98,7 +117,6 @@ func (api *API) Proposal(id int64) (ProposalResult, error) {
 	response := ProposalResponse{}
 	err = json.Unmarshal(res.Body(), &response)
 	if err != nil || !response.OK {
-		fmt.Println(err)
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {

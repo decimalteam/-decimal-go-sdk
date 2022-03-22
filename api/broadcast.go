@@ -10,7 +10,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
-const hugeGas = uint64(16 * 1024)
+// const hugeGas = uint64(16 * 1024)
+const hugeGas = uint64(16 << 10)
 
 // BroadcastTxResponse contains API response.
 type BroadcastTxResponse struct {
@@ -63,6 +64,9 @@ func (api *API) NewSignedTransaction(msgs []sdk.Msg, feeCoins sdk.Coins, memo st
 
 // BroadcastSignedTransactionJSON sends transaction (presented in JSON format) to the node and returns the result.
 func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx, acc *wallet.Account) (*BroadcastTxResult, error) {
+	var (
+		url = ""
+	)
 
 	// Marshal transaction to special JSON format
 	txJSONBytes, err := api.codec.MarshalJSON(tx)
@@ -77,7 +81,14 @@ func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx, acc *wallet.Accoun
 	}
 
 	// Send POST request at path `/rpc/txs` and wait for the response
-	res, err := api.client.R().SetBody(txJSON).Post("/rpc/txs")
+	if api.directConn == nil {
+		url = "/rpc/txs"
+	} else {
+		url = "/txs"
+	}
+
+	// TODO: undefined /txs in RPC, but was found /txs in REST?
+	res, err := api.client.rest.R().SetBody(txJSON).Post(url)
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +124,8 @@ func (api *API) BroadcastRawSignedTransaction(tx auth.StdTx) (*BroadcastTxResult
 	}
 	txHex := fmt.Sprintf("0x%x", txBytes)
 
-	url := "" // TODO
-	res, err := api.client.R().SetQueryParam("tx", txHex).Get(url)
+	url := "" // TODO: url is nil.
+	res, err := api.client.rest.R().SetQueryParam("tx", txHex).Get(url)
 	if err != nil {
 		return nil, err
 	}

@@ -62,12 +62,12 @@ const (
 
 // Fees for `swap/*` messages.
 const (
-	FeeSwapHTLT   Fee = 33000
-	FeeSwapRedeem Fee = 0
-	FeeSwapRefund Fee = 0
-	FeeSwapRedeemV2 Fee = 0
+	FeeSwapHTLT       Fee = 33000
+	FeeSwapRedeem     Fee = 0
+	FeeSwapRefund     Fee = 0
+	FeeSwapRedeemV2   Fee = 0
 	FeeSwapInitialize Fee = 0
-	FeeChainActivate Fee = 0
+	FeeChainActivate  Fee = 0
 	FeeSwapDeactivate Fee = 0
 )
 
@@ -90,6 +90,7 @@ func (api *API) EstimateTransactionGasWanted(tx auth.StdTx) (uint64, error) {
 
 // getMessageFee returns amount of fixed units needed to pay for the specified message.
 func (api *API) getMessageFee(msg sdk.Msg) (fee Fee, err error) {
+	// TODO: api object not used. Method -> Function.
 	switch r := msg.Route(); r {
 	case "nft":
 		switch t := msg.Type(); t {

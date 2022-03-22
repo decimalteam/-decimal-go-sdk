@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
@@ -80,9 +81,9 @@ type JsonRPCError struct {
 }
 
 type JsonRPCInternalError struct {
-	Code    int64  `json:"code"`
-	Message string `json:"message"`
-	Data    string `json:"data"`
+	Code    int64       `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
 // Error returns error info as string.
@@ -90,3 +91,15 @@ func (e *JsonRPCError) Error() string {
 	return fmt.Sprintf("statusCode: %d, message: \"%s\", data: \"%s\"", e.InternalError.Code,
 		e.InternalError.Message, e.InternalError.Data)
 }
+
+// Error returns error info as string.
+func (e *JsonRPCInternalError) Error() string {
+	return fmt.Sprintf("statusCode: %d, message: \"%s\", data: \"%s\"", e.Code,
+		e.Message, e.Data)
+}
+
+////////////////////////////////////////////////////////////////
+// Error for queries without RPC/REST implementation
+////////////////////////////////////////////////////////////////
+
+var ErrNotImplemented = errors.New("not implemented")

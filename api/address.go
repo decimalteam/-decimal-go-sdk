@@ -3,18 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/x/auth"
 )
-
-// AddressResponse contains API response.
-type AddressResponse struct {
-	OK     bool `json:"ok"`
-	Result struct {
-		Address *AddressResult `json:"address"`
-		Coins   []*CoinResult  `json:"coins"`
-	} `json:"result"`
-}
 
 // AddressResult contains API response fields.
 type AddressResult struct {
@@ -52,10 +44,43 @@ type BalanceNftStakeResult struct {
 }
 
 // Address requests full information about specified address.
+// TODO: NFT for direct connection
+// Gateway: ok, REST/RPC: partial
 func (api *API) Address(address string) (*AddressResult, error) {
+	type respAddress struct {
+		OK     bool `json:"ok"`
+		Result struct {
+			Address *AddressResult `json:"address"`
+			Coins   []*CoinResult  `json:"coins"`
+		} `json:"result"`
+	}
+	type respDirectAddress struct {
+		Result struct {
+			Value struct {
+				AccountNumber string `json:"account_number"`
+				Address       string `json:"address"`
+				Sequence      string `json:"sequence"`
+				Coins         []struct {
+					Denom  string `json:"denom"`
+					Amount string `json:"amount"`
+				} `json:"coins"`
+			} `json:"value"`
+		} `json:"result"`
+	}
 
-	url := fmt.Sprintf("/address/%s", address)
-	res, err := api.client.R().Get(url)
+	var (
+		gres = respAddress{}
+		dres = respDirectAddress{}
+		url  = ""
+	)
+
+	if api.directConn == nil {
+		url = fmt.Sprintf("/address/%s", address)
+	} else {
+		url = fmt.Sprintf("/auth/accounts/%s", address)
+	}
+
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -63,9 +88,13 @@ func (api *API) Address(address string) (*AddressResult, error) {
 		return nil, NewResponseError(res)
 	}
 
-	response := AddressResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
+	if api.directConn == nil {
+		err = json.Unmarshal(res.Body(), &gres)
+	} else {
+		err = json.Unmarshal(res.Body(), &dres)
+	}
+
+	if err != nil || (api.directConn == nil && !gres.OK) {
 		responseError := Error{}
 		err = json.Unmarshal(res.Body(), &responseError)
 		if err != nil {
@@ -74,14 +103,39 @@ func (api *API) Address(address string) (*AddressResult, error) {
 		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
 	}
 
-	return response.Result.Address, nil
+	if api.directConn == nil {
+		return gres.Result.Address, nil
+	}
+
+	balance := make(map[string]string)
+	for _, val := range dres.Result.Value.Coins {
+		balance[val.Denom] = val.Amount
+	}
+
+	accNumber, _ := strconv.ParseUint(dres.Result.Value.AccountNumber, 10, 64)
+
+	return &AddressResult{
+		ID:      accNumber,
+		Address: dres.Result.Value.Address,
+		Nonce:   dres.Result.Value.Sequence,
+		Balance: balance,
+	}, nil
 }
 
 // AccountNumberAndSequence requests account number and current sequence (nonce) of specified address.
+// Gateway: ok, REST/RPC: ok
 func (api *API) AccountNumberAndSequence(address string) (uint64, uint64, error) {
+	var (
+		url = ""
+	)
 
-	url := fmt.Sprintf("/rpc/auth/accounts/%s", address)
-	res, err := api.client.R().Get(url)
+	if api.directConn == nil {
+		url = fmt.Sprintf("/rpc/auth/accounts/%s", address)
+	} else {
+		url = fmt.Sprintf("/auth/accounts/%s", address)
+	}
+
+	res, err := api.client.rest.R().Get(url)
 	if err != nil {
 		return 0, 0, err
 	}
