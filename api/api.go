@@ -2,6 +2,8 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -150,6 +152,71 @@ func (api *API) ChainID() (chainID string, err error) {
 
 	chainID = api.chainID
 	return
+}
+
+// Return current height (block number) of blockchain
+func (api *API) GetHeight() (uint64, error) {
+	//api: /api/blocks?limit=1&offset=0
+	//rest: /status
+	if api.directConn == nil {
+		return api.apiGetHeight()
+	} else {
+		return api.restGetHeight()
+	}
+}
+
+func (api *API) apiGetHeight() (uint64, error) {
+	type responseType struct {
+		OK     bool `json:"ok"`
+		Result struct {
+			Blocks []struct {
+				Height uint64 `json:"height"`
+			} `json:"blocks"`
+		} `json:"result"`
+	}
+	res, err := api.client.rpc.R().Get("/blocks?limit=1&offset=0")
+	if err = processConnectionError(res, err); err != nil {
+		return 0, err
+	}
+	response := responseType{}
+	err = json.Unmarshal(res.Body(), &response)
+	if err != nil || !response.OK {
+		responseError := JsonRPCError{}
+		err = json.Unmarshal(res.Body(), &responseError)
+		if err != nil {
+			return 0, err
+		}
+		return 0, fmt.Errorf("received response containing error: %s", responseError.Error())
+	}
+	if len(response.Result.Blocks) > 0 {
+		return response.Result.Blocks[0].Height, nil
+	}
+	return 0, fmt.Errorf("Response without blocks")
+}
+
+func (api *API) restGetHeight() (uint64, error) {
+	type responseType struct {
+		Result struct {
+			SyncInfo struct {
+				Height string `json:"latest_block_height"`
+			} `json:"sync_info"`
+		} `json:"result"`
+	}
+	res, err := api.client.rpc.R().Get("/status")
+	if err = processConnectionError(res, err); err != nil {
+		return 0, err
+	}
+	response := responseType{}
+	err = json.Unmarshal(res.Body(), &response)
+	if err != nil {
+		responseError := JsonRPCError{}
+		err = json.Unmarshal(res.Body(), &responseError)
+		if err != nil {
+			return 0, err
+		}
+		return 0, fmt.Errorf("received response containing error: %s", responseError.Error())
+	}
+	return strconv.ParseUint(response.Result.SyncInfo.Height, 10, 64)
 }
 
 // newConfig initializes new Cosmos SDK configuration.

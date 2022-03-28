@@ -63,6 +63,7 @@ func (api *API) NewSignedTransaction(msgs []sdk.Msg, feeCoins sdk.Coins, memo st
 }
 
 // BroadcastSignedTransactionJSON sends transaction (presented in JSON format) to the node and returns the result.
+// If transaction is sucessful, it modified account sequence
 func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx, acc *wallet.Account) (*BroadcastTxResult, error) {
 	var (
 		url = ""

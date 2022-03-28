@@ -103,3 +103,17 @@ func (e *JsonRPCInternalError) Error() string {
 ////////////////////////////////////////////////////////////////
 
 var ErrNotImplemented = errors.New("not implemented")
+
+////////////////////////////////////////////////////////////////
+// Function to decrease boilerplate handling
+////////////////////////////////////////////////////////////////
+
+func processConnectionError(response *resty.Response, err error) error {
+	if err != nil {
+		return err
+	}
+	if response.IsError() {
+		return NewResponseError(response)
+	}
+	return nil
+}

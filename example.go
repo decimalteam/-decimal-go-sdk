@@ -16,8 +16,9 @@ import (
 
 	"github.com/go-resty/resty/v2" // use resty.Client for debugging
 
-	//sdk "github.com/cosmos/cosmos-sdk/types"
 	"net/http"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	decapi "bitbucket.org/decimalteam/decimal-go-sdk/api"
 	"bitbucket.org/decimalteam/decimal-go-sdk/wallet"
@@ -142,9 +143,11 @@ func main() {
 	var checkCoins bool = false
 	var checkValidators bool = false
 	var checkProposals bool = false
-	var checkNFT bool = true
+	var checkNFT bool = false
 	var checkMultisig bool = false
 	var checkStakes bool = false
+	var checkTransaction bool = false
+	var checkSend bool = true
 	flag.Parse()
 
 	endpoint := apiEndpoints[0]
@@ -334,7 +337,8 @@ func main() {
 	////////////////////
 	if checkStakes {
 		log.Printf("Stakes")
-		for _, adr := range []string{"dx18ag7adcd0qxrlfxw3f9v79lfvgh99xe50s63a3",
+		for _, adr := range []string{
+			"dx18ag7adcd0qxrlfxw3f9v79lfvgh99xe50s63a3",
 			"dx1w98j4vk6dkpyndjnv5dn2eemesq6a2c2j9depy",
 			"dx19c7rudu8fs9kvhxyxuxer03058t78cxzvacgd4",
 			"dx1wq40a4tzk226kymfzqfr0s96cjeka66j0xmlcr",
@@ -346,6 +350,34 @@ func main() {
 			}
 			log.Printf("Stakes info: %s", formatAsJSON(stakes))
 		}
+	}
+	////////////////////
+	if checkTransaction {
+		txs := []string{}
+		last_block, err := api.GetHeight()
+		if err != nil {
+			log.Printf("ERROR: while get last block: %s", err.Error())
+		}
+		// try find at least 2 transactions in last 500 blocks
+		for block := last_block; (len(txs) < 2) && (block > last_block-500); block-- {
+			tmp, err := api.TransactionsByBlock(block)
+			if err != nil {
+				log.Printf("ERROR: while get txs: %s", err.Error())
+			}
+			txs = append(txs, tmp...)
+		}
+		// get tx info
+		for _, hash := range txs {
+			tx, err := api.Transaction(hash)
+			if err != nil {
+				log.Printf("ERROR: while get tx: hash=%s, error=%s", hash, err.Error())
+			}
+			log.Printf("Tx result: %s", formatAsJSON(tx))
+		}
+	}
+	////////////////////
+	if checkSend {
+		testSend(api)
 	}
 	////////////////////
 	log.Printf("END test endpoint")
@@ -409,6 +441,85 @@ func fillWallet(api *decapi.API, address string, network string) {
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("ERROR: Fill requests failed: %s", resp.Status)
 		return
+	}
+}
+
+// TODO: full set with error handling
+func bindAcc(api *decapi.API, acc *wallet.Account) {
+	// check and bind wallets numbers and sequences; if zero - account without balance and transcations
+	if accNumber, seq, err := api.AccountNumberAndSequence(acc.Address()); err == nil {
+		acc = acc.WithAccountNumber(accNumber).WithSequence(seq)
+		log.Printf("Account %s number: %d, sequence: %d", acc.Address(), accNumber, seq)
+	} else {
+		log.Printf("ERROR: get AccountNumberAndSequence error %s", err.Error())
+	}
+}
+
+// Test example to send coins
+// It shows set up for wallets(accounts) and preparations for transactions
+func testSend(api *decapi.API) {
+	log.Printf("START test send")
+	// make wallets
+	mnemonic1 := "plug tissue today frown increase race brown sail post march trick coconut laptop churn call child question match also spend play credit already travel"
+	acc1, err := wallet.NewAccountFromMnemonicWords(mnemonic1, "")
+	if err != nil {
+		log.Printf("ERROR: acc1 %s", err.Error())
+	}
+	mnemonic2 := "layer pass tide basic raccoon olive trust satoshi coil harbor script shrimp health gadget few armed rival spread release welcome long dust almost banana"
+	acc2, err := wallet.NewAccountFromMnemonicWords(mnemonic2, "")
+	if err != nil {
+		log.Printf("ERROR: acc2 %s", err.Error())
+	}
+	// set chain id
+	chainId, _ := api.ChainID()
+	acc1 = acc1.WithChainID(chainId)
+	acc2 = acc2.WithChainID(chainId)
+
+	//send in both directions
+	testCases := []struct {
+		accFrom *wallet.Account
+		accTo   *wallet.Account
+	}{
+		{acc1, acc2},
+		{acc2, acc1},
+	}
+	for _, tst := range testCases {
+		bindAcc(api, acc1)
+		bindAcc(api, acc2)
+		//prepare transaction
+		sender, err := sdk.AccAddressFromBech32(tst.accFrom.Address())
+		if err != nil {
+			log.Printf("ERROR: AccAddressFromBech32 %s->%s", tst.accFrom.Address(), err.Error())
+		}
+		receiver, err := sdk.AccAddressFromBech32(tst.accTo.Address())
+		if err != nil {
+			log.Printf("ERROR: AccAddressFromBech32 %s->%s", tst.accTo.Address(), err.Error())
+		}
+		//10^18
+		amount := sdk.NewInt(1500000000000000000) // 1.5
+		coin := sdk.NewCoin("del", amount)
+
+		// Prepare message
+		msg := decapi.NewMsgSendCoin(sender, coin, receiver)
+
+		// Prepare transaction arguments
+		msgs := []sdk.Msg{msg}
+		feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
+		memo := "test message"
+
+		// Create signed transaction
+		tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, tst.accFrom)
+		if err != nil {
+			log.Printf("ERROR: NewSignedTransaction(from %s) %s", tst.accTo.Address(), err.Error())
+		}
+		log.Printf("SignedTransaction result: %s", formatAsJSON(tx))
+
+		// Broadcast signed transaction
+		broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx, tst.accFrom)
+		if err != nil {
+			log.Printf("ERROR: BroadcastSignedTransactionJSON(from %s) %s", tst.accTo.Address(), err.Error())
+		}
+		log.Printf("BroadcastSignedTransactionJSON result: %s", formatAsJSON(broadcastTxResult))
 	}
 }
 

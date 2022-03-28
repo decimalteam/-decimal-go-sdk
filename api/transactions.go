@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 // TransactionResponse contains API response.
@@ -77,15 +78,13 @@ func (api *API) Transaction(txHash string) (*TransactionResult, error) {
 	if api.directConn == nil {
 		url = fmt.Sprintf("/rpc/tx?hash=%s", txHash)
 	} else {
+		// TODO
 		url = fmt.Sprintf("/tx?hash=0x%s", txHash)
 	}
 
 	res, err := api.client.rpc.R().Get(url)
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
-	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
 	}
 
 	response := TransactionResponse{}
@@ -105,6 +104,72 @@ func (api *API) Transaction(txHash string) (*TransactionResult, error) {
 	response.Result.TxResult.LogParsed = txLogs
 
 	return response.Result, nil
+}
+
+//TransactionsByBlock return all transactions hashes in block
+func (api *API) TransactionsByBlock(height uint64) ([]string, error) {
+	if api.directConn == nil {
+		return api.apiTransactionsByBlock(height)
+	} else {
+		return api.restTransactionsByBlock(height)
+	}
+}
+
+func (api *API) apiTransactionsByBlock(height uint64) ([]string, error) {
+	type responseType struct {
+		OK     bool `json:"ok"`
+		Result struct {
+			Count int64 `json:"count"`
+			Txs   []struct {
+				Hash string `json:"hash"`
+			} `json:"txs"`
+		} `json:"result"`
+	}
+	res, err := api.client.rpc.R().Get(fmt.Sprintf("/block/%d/txs", height))
+	if err = processConnectionError(res, err); err != nil {
+		return []string{}, err
+	}
+	response := responseType{}
+	err = json.Unmarshal(res.Body(), &response)
+	if err != nil || !response.OK {
+		responseError := JsonRPCError{}
+		err = json.Unmarshal(res.Body(), &responseError)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
+	}
+	result := make([]string, 0, response.Result.Count)
+	for _, tx := range response.Result.Txs {
+		result = append(result, tx.Hash)
+	}
+	return result, nil
+}
+
+func (api *API) restTransactionsByBlock(height uint64) ([]string, error) {
+	type responseType struct {
+		TotalCount string `json:"total_count"`
+		Count      string `json:"count"`
+		Txs        []struct {
+			Hash string `json:"hash"`
+		} `json:"txs"`
+	}
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/txs?tx.minheight=%d&tx.maxheight=%d&limit=%d", height, height, 1000))
+	if err = processConnectionError(res, err); err != nil {
+		return []string{}, err
+	}
+	response := responseType{}
+	err = json.Unmarshal(res.Body(), &response)
+	if err != nil {
+		return nil, fmt.Errorf("response unmarshaling error: %s", err.Error())
+	}
+	//TODO: pagination
+	totalCount, _ := strconv.ParseUint(response.TotalCount, 10, 64)
+	result := make([]string, 0, totalCount)
+	for _, tx := range response.Txs {
+		result = append(result, tx.Hash)
+	}
+	return result, nil
 }
 
 ////////////////////////////////////////////////////////////////
