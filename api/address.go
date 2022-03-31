@@ -1,11 +1,8 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
-
-	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 // AddressResult contains API response fields.
@@ -47,6 +44,14 @@ type BalanceNftStakeResult struct {
 // TODO: NFT for direct connection
 // Gateway: ok, REST/RPC: partial
 func (api *API) Address(address string) (*AddressResult, error) {
+	if api.directConn == nil {
+		return api.apiAddress(address)
+	} else {
+		return api.restAddress(address)
+	}
+}
+
+func (api *API) apiAddress(address string) (*AddressResult, error) {
 	type respAddress struct {
 		OK     bool `json:"ok"`
 		Result struct {
@@ -54,6 +59,24 @@ func (api *API) Address(address string) (*AddressResult, error) {
 			Coins   []*CoinResult  `json:"coins"`
 		} `json:"result"`
 	}
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/address/%s", address))
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	//json decode
+	respValue, respErr := respAddress{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
+	}
+	//process result
+	return respValue.Result.Address, nil
+}
+
+func (api *API) restAddress(address string) (*AddressResult, error) {
 	type respDirectAddress struct {
 		Result struct {
 			Value struct {
@@ -67,57 +90,31 @@ func (api *API) Address(address string) (*AddressResult, error) {
 			} `json:"value"`
 		} `json:"result"`
 	}
-
-	var (
-		gres = respAddress{}
-		dres = respDirectAddress{}
-		url  = ""
-	)
-
-	if api.directConn == nil {
-		url = fmt.Sprintf("/address/%s", address)
-	} else {
-		url = fmt.Sprintf("/auth/accounts/%s", address)
-	}
-
-	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/auth/accounts/%s", address))
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	//json decode
+	respValue, respErr := respDirectAddress{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.Result.Value.AccountNumber > "", respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
-	if api.directConn == nil {
-		err = json.Unmarshal(res.Body(), &gres)
-	} else {
-		err = json.Unmarshal(res.Body(), &dres)
-	}
-
-	if err != nil || (api.directConn == nil && !gres.OK) {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	if api.directConn == nil {
-		return gres.Result.Address, nil
-	}
-
+	//process result
 	balance := make(map[string]string)
-	for _, val := range dres.Result.Value.Coins {
+	for _, val := range respValue.Result.Value.Coins {
 		balance[val.Denom] = val.Amount
 	}
 
-	accNumber, _ := strconv.ParseUint(dres.Result.Value.AccountNumber, 10, 64)
+	accNumber, _ := strconv.ParseUint(respValue.Result.Value.AccountNumber, 10, 64)
 
 	return &AddressResult{
 		ID:      accNumber,
-		Address: dres.Result.Value.Address,
-		Nonce:   dres.Result.Value.Sequence,
+		Address: respValue.Result.Value.Address,
+		Nonce:   respValue.Result.Value.Sequence,
 		Balance: balance,
 	}, nil
 }
@@ -125,38 +122,10 @@ func (api *API) Address(address string) (*AddressResult, error) {
 // AccountNumberAndSequence requests account number and current sequence (nonce) of specified address.
 // Gateway: ok, REST/RPC: ok
 func (api *API) AccountNumberAndSequence(address string) (uint64, uint64, error) {
-	var (
-		url = ""
-	)
-
-	if api.directConn == nil {
-		url = fmt.Sprintf("/rpc/auth/accounts/%s", address)
-	} else {
-		url = fmt.Sprintf("/auth/accounts/%s", address)
-	}
-
-	res, err := api.client.rest.R().Get(url)
+	adrRes, err := api.Address(address)
 	if err != nil {
 		return 0, 0, err
 	}
-	if res.IsError() {
-		return 0, 0, NewResponseError(res)
-	}
-
-	response := struct {
-		Height string          `json:"height"`
-		Result json.RawMessage `json:"result"`
-	}{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	account := auth.BaseAccount{}
-	err = api.codec.UnmarshalJSON(response.Result, &account)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return account.AccountNumber, account.Sequence, nil
+	seq, _ := strconv.ParseUint(adrRes.Nonce, 10, 64)
+	return adrRes.ID, seq, nil
 }

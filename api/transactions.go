@@ -71,39 +71,54 @@ type TxAttributeBase64 struct {
 // NOTE: It is expected that `txHash` encoded in hex format and written
 // in capital letters and without "0x" at the beginning.
 func (api *API) Transaction(txHash string) (*TransactionResult, error) {
-	var (
-		url = ""
-	)
-
 	if api.directConn == nil {
-		url = fmt.Sprintf("/rpc/tx?hash=%s", txHash)
+		return api.apiTransaction(txHash)
 	} else {
-		// TODO
-		url = fmt.Sprintf("/tx?hash=0x%s", txHash)
+		return api.restTransaction(txHash)
 	}
+}
 
-	res, err := api.client.rpc.R().Get(url)
+func (api *API) apiTransaction(txHash string) (*TransactionResult, error) {
+	//request
+	res, err := api.client.rpc.R().Get(fmt.Sprintf("/rpc/tx?hash=%s", txHash))
 	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-
-	response := TransactionResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || response.Result == nil {
-		responseError := JsonRPCError{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
+	// json decode
+	respValue, respErr := TransactionResponse{}, JsonRPCError{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.Result != nil, respErr.InternalError.Code != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
+	//
 	// Parse `log` value presented as string to []TxLog array
 	txLogs := []TxLog{}
-	json.Unmarshal([]byte(response.Result.TxResult.Log), &txLogs)
-	response.Result.TxResult.LogParsed = txLogs
+	json.Unmarshal([]byte(respValue.Result.TxResult.Log), &txLogs)
+	respValue.Result.TxResult.LogParsed = txLogs
+	return respValue.Result, nil
+}
 
-	return response.Result, nil
+func (api *API) restTransaction(txHash string) (*TransactionResult, error) {
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/txs/%s", txHash))
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	// json decode
+	respValue, respErr := TransactionResponse{}, JsonRPCError{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.Result != nil, respErr.InternalError.Code != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
+	}
+	//
+	txLogs := []TxLog{}
+	json.Unmarshal([]byte(respValue.Result.TxResult.Log), &txLogs)
+	respValue.Result.TxResult.LogParsed = txLogs
+	return respValue.Result, nil
 }
 
 //TransactionsByBlock return all transactions hashes in block
@@ -125,22 +140,22 @@ func (api *API) apiTransactionsByBlock(height uint64) ([]string, error) {
 			} `json:"txs"`
 		} `json:"result"`
 	}
+	//request
 	res, err := api.client.rpc.R().Get(fmt.Sprintf("/block/%d/txs", height))
 	if err = processConnectionError(res, err); err != nil {
-		return []string{}, err
+		return nil, err
 	}
-	response := responseType{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := JsonRPCError{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
+	//json decode
+	respValue, respErr := responseType{}, JsonRPCError{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.InternalError.Code != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-	result := make([]string, 0, response.Result.Count)
-	for _, tx := range response.Result.Txs {
+	//process result
+	result := make([]string, 0, respValue.Result.Count)
+	for _, tx := range respValue.Result.Txs {
 		result = append(result, tx.Hash)
 	}
 	return result, nil
@@ -151,22 +166,27 @@ func (api *API) restTransactionsByBlock(height uint64) ([]string, error) {
 		TotalCount string `json:"total_count"`
 		Count      string `json:"count"`
 		Txs        []struct {
-			Hash string `json:"hash"`
+			Hash string `json:"txhash"`
 		} `json:"txs"`
 	}
+	// request
 	res, err := api.client.rest.R().Get(fmt.Sprintf("/txs?tx.minheight=%d&tx.maxheight=%d&limit=%d", height, height, 1000))
 	if err = processConnectionError(res, err); err != nil {
-		return []string{}, err
+		return nil, err
 	}
-	response := responseType{}
-	err = json.Unmarshal(res.Body(), &response)
+	// json decode
+	respValue := responseType{}
+	err = universalJSONDecode(res.Body(), &respValue, nil, func() (bool, bool) {
+		return respValue.Count > "", false
+	})
 	if err != nil {
-		return nil, fmt.Errorf("response unmarshaling error: %s", err.Error())
+		return nil, err
 	}
+	// process result
 	//TODO: pagination
-	totalCount, _ := strconv.ParseUint(response.TotalCount, 10, 64)
+	totalCount, _ := strconv.ParseUint(respValue.TotalCount, 10, 64)
 	result := make([]string, 0, totalCount)
-	for _, tx := range response.Txs {
+	for _, tx := range respValue.Txs {
 		result = append(result, tx.Hash)
 	}
 	return result, nil

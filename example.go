@@ -139,15 +139,15 @@ func main() {
 	var endpointId = flag.String("id", "", "Predefined endpoint id for testing")
 	var logfileName = flag.String("log", "example_testing.log", "path to logfile")
 	var doLogRequests = flag.Bool("logreq", true, "write raw request/response to log")
+	var checkCoins = flag.Bool("check-coins", false, "Check coins requests")
+	var checkValidators = flag.Bool("check-validators", false, "Check validators requests")
+	var checkProposals = flag.Bool("check-proposals", false, "Check proposals requests")
+	var checkNFT = flag.Bool("check-nft", false, "Check NFT requests")
+	var checkMultisig = flag.Bool("check-multisig", false, "Check Multisig requests")
+	var checkStakes = flag.Bool("check-stakes", false, "Check stakes requests")
+	var checkTransaction = flag.Bool("check-transaction", false, "Check transaction requests")
+	var checkSend bool = false
 	var checkWallets bool = false
-	var checkCoins bool = false
-	var checkValidators bool = false
-	var checkProposals bool = false
-	var checkNFT bool = false
-	var checkMultisig bool = false
-	var checkStakes bool = false
-	var checkTransaction bool = false
-	var checkSend bool = true
 	flag.Parse()
 
 	endpoint := apiEndpoints[0]
@@ -217,7 +217,7 @@ func main() {
 		}
 	}
 	////////////////////
-	if checkCoins {
+	if *checkCoins {
 		coinSymbols := []struct {
 			symbol string
 			valid  bool
@@ -240,43 +240,45 @@ func main() {
 		}
 	}
 	////////////////////
-	if checkValidators {
+	if *checkValidators {
 		log.Printf("Validators")
 		validators, err := api.Validators()
 		if err != nil {
 			log.Printf("ERROR: while get validators: %s", err.Error())
-		}
-		log.Printf("Validators info:", formatAsJSON(validators))
-		//
-		log.Printf("get individual validator")
-		validatorsChecks := []struct {
-			address string
-			valid   bool
-		}{
-			{validators[0].Address, true},
-			{validators[0].Address + "0", false},
-		}
-		for _, vi := range validatorsChecks {
-			log.Printf("try to get validator info address: %s, valid: %v", vi.address, vi.valid)
-			val, err := api.Validator(vi.address)
-			if err != nil && vi.valid {
-				log.Printf("ERROR: while get validator: %s", err.Error())
+		} else {
+			log.Printf("Validators info:", formatAsJSON(validators))
+			//
+			log.Printf("get individual validator")
+			validatorsChecks := []struct {
+				address string
+				valid   bool
+			}{
+				{validators[0].Address, true},
+				{validators[0].Address + "0", false},
 			}
-			if err == nil && !vi.valid {
-				log.Printf("ERROR: you must get error")
+			for _, vi := range validatorsChecks {
+				log.Printf("try to get validator info address: %s, valid: %v", vi.address, vi.valid)
+				val, err := api.Validator(vi.address)
+				if err != nil && vi.valid {
+					log.Printf("ERROR: while get validator: %s", err.Error())
+				}
+				if err == nil && !vi.valid {
+					log.Printf("ERROR: you must get error")
+				}
+				log.Printf("Validator info: %s", formatAsJSON(val))
 			}
-			log.Printf("Validator info: %s", formatAsJSON(val))
 		}
 		//
 		log.Printf("Candidates")
 		cands, err := api.Candidates()
 		if err != nil {
-			log.Printf("ERROR: while get validators: %s", err.Error())
+			log.Printf("ERROR: while get candidates: %s", err.Error())
+		} else {
+			log.Printf("Candidates info: %s", formatAsJSON(cands))
 		}
-		log.Printf("Candidates info: %s", formatAsJSON(cands))
 	}
 	////////////////////
-	if checkProposals {
+	if *checkProposals {
 		log.Printf("Proposals")
 		props, err := api.Proposals()
 		if err != nil {
@@ -301,7 +303,7 @@ func main() {
 		log.Printf("Proposal info: %s", formatAsJSON(prop))
 	}
 	////////////////////
-	if checkNFT {
+	if *checkNFT {
 		log.Printf("NFTs")
 		log.Printf("Get NFT list")
 		nfts, err := api.NFTList()
@@ -331,11 +333,11 @@ func main() {
 		}
 	}
 	////////////////////
-	if checkMultisig {
+	if *checkMultisig {
 
 	}
 	////////////////////
-	if checkStakes {
+	if *checkStakes {
 		log.Printf("Stakes")
 		for _, adr := range []string{
 			"dx18ag7adcd0qxrlfxw3f9v79lfvgh99xe50s63a3",
@@ -352,14 +354,19 @@ func main() {
 		}
 	}
 	////////////////////
-	if checkTransaction {
+	if checkSend {
+		testSend(api)
+		//testGovProposal(api)
+	}
+	////////////////////
+	if *checkTransaction {
 		txs := []string{}
 		last_block, err := api.GetHeight()
 		if err != nil {
 			log.Printf("ERROR: while get last block: %s", err.Error())
 		}
 		// try find at least 2 transactions in last 500 blocks
-		for block := last_block; (len(txs) < 2) && (block > last_block-500); block-- {
+		for block := last_block; (len(txs) < 2) && (block > last_block-100); block-- {
 			tmp, err := api.TransactionsByBlock(block)
 			if err != nil {
 				log.Printf("ERROR: while get txs: %s", err.Error())
@@ -375,10 +382,7 @@ func main() {
 			log.Printf("Tx result: %s", formatAsJSON(tx))
 		}
 	}
-	////////////////////
-	if checkSend {
-		testSend(api)
-	}
+
 	////////////////////
 	log.Printf("END test endpoint")
 	log.Println("--------------------------")
@@ -520,6 +524,124 @@ func testSend(api *decapi.API) {
 			log.Printf("ERROR: BroadcastSignedTransactionJSON(from %s) %s", tst.accTo.Address(), err.Error())
 		}
 		log.Printf("BroadcastSignedTransactionJSON result: %s", formatAsJSON(broadcastTxResult))
+	}
+}
+
+func testInvalidSend(api *decapi.API) {
+	log.Printf("START test send")
+	// make wallets
+	mnemonic1 := "plug tissue today frown increase race brown sail post march trick coconut laptop churn call child question match also spend play credit already travel"
+	acc1, err := wallet.NewAccountFromMnemonicWords(mnemonic1, "")
+	if err != nil {
+		log.Printf("ERROR: acc1 %s", err.Error())
+	}
+	mnemonic2 := "layer pass tide basic raccoon olive trust satoshi coil harbor script shrimp health gadget few armed rival spread release welcome long dust almost banana"
+	acc2, err := wallet.NewAccountFromMnemonicWords(mnemonic2, "")
+	if err != nil {
+		log.Printf("ERROR: acc2 %s", err.Error())
+	}
+	// set chain id
+	chainId, _ := api.ChainID()
+	acc1 = acc1.WithChainID(chainId)
+	acc2 = acc2.WithChainID(chainId)
+
+	//send in both directions
+	testCases := []struct {
+		accFrom *wallet.Account
+		accTo   *wallet.Account
+	}{
+		{acc1, acc2},
+		{acc2, acc1},
+	}
+	for _, tst := range testCases {
+		bindAcc(api, acc1)
+		bindAcc(api, acc2)
+		//prepare transaction
+		sender, err := sdk.AccAddressFromBech32(tst.accFrom.Address())
+		if err != nil {
+			log.Printf("ERROR: AccAddressFromBech32 %s->%s", tst.accFrom.Address(), err.Error())
+		}
+		receiver, err := sdk.AccAddressFromBech32(tst.accTo.Address())
+		if err != nil {
+			log.Printf("ERROR: AccAddressFromBech32 %s->%s", tst.accTo.Address(), err.Error())
+		}
+		//10^18
+		amount := sdk.NewInt(1500000000000000000) // 1.5
+		coin := sdk.NewCoin("del0", amount)
+
+		// Prepare message
+		msg := decapi.NewMsgSendCoin(sender, coin, receiver)
+
+		// Prepare transaction arguments
+		msgs := []sdk.Msg{msg}
+		feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
+		memo := "test message"
+
+		// Create signed transaction
+		tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, tst.accFrom)
+		if err != nil {
+			log.Printf("ERROR: NewSignedTransaction(from %s) %s", tst.accTo.Address(), err.Error())
+		}
+		log.Printf("SignedTransaction result: %s", formatAsJSON(tx))
+
+		// Broadcast signed transaction
+		broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx, tst.accFrom)
+		if err != nil {
+			log.Printf("ERROR: BroadcastSignedTransactionJSON(from %s) %s", tst.accTo.Address(), err.Error())
+		}
+		log.Printf("BroadcastSignedTransactionJSON result: %s", formatAsJSON(broadcastTxResult))
+		time.Sleep(time.Second * 5)
+		txRes, err := api.Transaction(broadcastTxResult.TxHash)
+		log.Printf("Tx result: %s", formatAsJSON(txRes))
+	}
+}
+
+func testGovProposal(api *decapi.API) {
+	log.Printf("START gov proposal")
+	// make wallets
+	mnemonic1 := "plug tissue today frown increase race brown sail post march trick coconut laptop churn call child question match also spend play credit already travel"
+	acc1, err := wallet.NewAccountFromMnemonicWords(mnemonic1, "")
+	if err != nil {
+		log.Printf("ERROR: acc1 %s", err.Error())
+	}
+	// set chain id
+	chainId, _ := api.ChainID()
+	acc1 = acc1.WithChainID(chainId)
+	bindAcc(api, acc1)
+	//
+	sender, err := sdk.AccAddressFromBech32(acc1.Address())
+	if err != nil {
+		log.Printf("ERROR: AccAddressFromBech32 %s->%s", acc1.Address(), err.Error())
+	}
+
+	msg := decapi.MsgSubmitProposal{}
+	//enc := []byte(`{"content":{"title":"test title", "description":"test"}}`)
+	//json.Unmarshal(enc, &msg)
+	msg.Content.Title = "test title"
+	msg.Content.Description = "test"
+	msg.Proposer = sender
+	msg.VotingStartBlock = 30100
+	msg.VotingEndBlock = 30000
+	msgs := []sdk.Msg{msg}
+	feeCoins := sdk.NewCoins(sdk.NewCoin("del", sdk.NewInt(0)))
+	memo := "test message"
+	// Create signed transaction
+	tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, acc1)
+	if err != nil {
+		log.Printf("ERROR: NewSignedTransaction(from %s) %s", acc1, err.Error())
+	} else {
+		log.Printf("SignedTransaction result: %s", formatAsJSON(tx))
+	}
+
+	// Broadcast signed transaction
+	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx, acc1)
+	if err != nil {
+		log.Printf("ERROR: BroadcastSignedTransactionJSON(from %s) %s", acc1, err.Error())
+	} else {
+		log.Printf("BroadcastSignedTransactionJSON result: %s", formatAsJSON(broadcastTxResult))
+		time.Sleep(time.Second * 5)
+		txRes, _ := api.Transaction(broadcastTxResult.TxHash)
+		log.Printf("Tx result: %s", formatAsJSON(txRes))
 	}
 }
 

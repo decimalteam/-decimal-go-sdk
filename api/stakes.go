@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -30,30 +29,26 @@ type Stake struct {
 	UnbondAmount string `json:"unbondAmount"`
 }
 
-// TODO: undefined this API in REST/RPC.
-
 // Stakes requests full information about stakes from the account with specified address.
+// TODO: implement this API in REST/RPC.
 func (api *API) Stakes(address string) ([]*StakesResult, error) {
-
-	url := fmt.Sprintf("/address/%s/stakes", address)
-	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	if api.directConn != nil {
+		return nil, ErrNotImplemented
+	}
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/address/%s/stakes", address))
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	//json decode
+	respValue, respErr := StakesResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK && len(respValue.Result.Stakes) > 0, respErr.StatusCode != 0
+	})
+	return nil, respErr
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
-	response := StakesResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result.Stakes, nil
+	//process result
+	return respValue.Result.Stakes, nil
 }

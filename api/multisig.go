@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -102,78 +101,66 @@ type BalanceEntry struct {
 
 // MultisigWallets requests full list of multisig wallets which has account with specified address as participant.
 func (api *API) MultisigWallets(address string) ([]*MultisigWalletsResult, error) {
-
-	url := fmt.Sprintf("/address/%s/multisigs", address)
-	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	if api.directConn != nil {
+		return nil, ErrNotImplemented
+	}
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/address/%s/multisigs", address))
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	//json decode
+	respValue, respErr := MultisigWalletsResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
-	response := MultisigWalletsResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result.Wallets, nil
+	//process result
+	return respValue.Result.Wallets, nil
 }
 
 // MultisigWallet requests multisig wallet with specified address.
 func (api *API) MultisigWallet(address string) (*MultisigWalletResult, error) {
-
-	url := fmt.Sprintf("/multisig/%s", address)
-	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	if api.directConn != nil {
+		return nil, ErrNotImplemented
+	}
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/multisig/%s", address))
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	//response
+	respValue, respErr := MultisigWalletResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
-	response := MultisigWalletResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result, nil
+	//process result
+	return respValue.Result, nil
 }
 
 // MultisigTransactions requests full list of transactions in multisig wallet with specified address.
 func (api *API) MultisigTransactions(address string) ([]*MultisigTransactionResult, error) {
-
-	url := fmt.Sprintf("/multisig/%s/txs", address)
-	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	if api.directConn != nil {
+		return nil, ErrNotImplemented
+	}
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/multisig/%s/txs", address))
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	//json decode
+	respValue, respErr := MultisigTransactionsResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
-	response := MultisigTransactionsResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result.Transactions, nil
+	//process result
+	return respValue.Result.Transactions, nil
 }

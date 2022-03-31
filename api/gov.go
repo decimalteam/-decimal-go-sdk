@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -67,29 +66,24 @@ func (api *API) Proposals() ([]ProposalResult, error) {
 	if api.directConn == nil {
 		url = "/proposals"
 	} else {
+		return nil, ErrNotImplemented
 		url = "/gov/proposals"
 	}
-
+	//request
 	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	//json decode
+	respValue, respErr := ProposalsResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
-	response := ProposalsResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result.Proposals, nil
+	//process result
+	return respValue.Result.Proposals, nil
 }
 
 // Proposal requests full information about gov with specified id.
@@ -103,27 +97,23 @@ func (api *API) Proposal(id int64) (ProposalResult, error) {
 	if api.directConn == nil {
 		url = fmt.Sprintf("/proposalById/%d", id)
 	} else {
+		return ProposalResult{}, ErrNotImplemented
 		url = fmt.Sprintf("/gov/proposals/%d", id)
 	}
 
+	//request
 	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return ProposalResult{}, err
 	}
-	if res.IsError() {
-		return ProposalResult{}, NewResponseError(res)
+	//json decode
+	respValue, respErr := ProposalResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return ProposalResult{}, joinErrors(err, respErr)
 	}
-
-	response := ProposalResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return ProposalResult{}, err
-		}
-		return ProposalResult{}, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result, nil
+	// process result
+	return respValue.Result, nil
 }

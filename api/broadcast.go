@@ -90,13 +90,9 @@ func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx, acc *wallet.Accoun
 
 	// TODO: undefined /txs in RPC, but was found /txs in REST?
 	res, err := api.client.rest.R().SetBody(txJSON).Post(url)
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
-	}
-
 	// Unmarshal response from JSON format
 	response := BroadcastTxResult{}
 	err = json.Unmarshal(res.Body(), &response)
@@ -127,11 +123,8 @@ func (api *API) BroadcastRawSignedTransaction(tx auth.StdTx) (*BroadcastTxResult
 
 	url := "" // TODO: url is nil.
 	res, err := api.client.rest.R().SetQueryParam("tx", txHex).Get(url)
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
-	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
 	}
 
 	response := BroadcastTxResponse{}

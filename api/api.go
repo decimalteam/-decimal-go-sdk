@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -111,7 +110,27 @@ func (api *API) Codec() *codec.Codec {
 }
 
 // ChainID retrieves chain ID.
-func (api *API) ChainID() (chainID string, err error) {
+func (api *API) ChainID() (string, error) {
+	if api.directConn == nil {
+		return api.apiChainID()
+	} else {
+		return api.restChainID()
+	}
+}
+
+func (api *API) apiChainID() (string, error) {
+	//request
+	res, err := api.client.rpc.R().Get("/rpc/genesis/chain")
+	if err = processConnectionError(res, err); err != nil {
+		return "", err
+	}
+	//decode
+	api.chainID = string(res.Body())
+	//process result
+	return api.chainID, nil
+}
+
+func (api *API) restChainID() (string, error) {
 	type respDirectChainID struct {
 		Result struct {
 			NodeInfo struct {
@@ -119,39 +138,22 @@ func (api *API) ChainID() (chainID string, err error) {
 			} `json:"node_info"`
 		} `json:"result"`
 	}
-
-	var (
-		dres = respDirectChainID{}
-		url  = ""
-	)
-
-	if api.directConn == nil {
-		url = "/rpc/genesis/chain"
-	} else {
-		url = "/status"
+	//request
+	res, err := api.client.rpc.R().Get("/status")
+	if err = processConnectionError(res, err); err != nil {
+		return "", err
 	}
-
-	res, err := api.client.rpc.R().Get(url)
+	//json decode
+	respValue := respDirectChainID{}
+	err = universalJSONDecode(res.Body(), &respValue, nil, func() (bool, bool) {
+		return respValue.Result.NodeInfo.Network > "", false
+	})
 	if err != nil {
-		return
+		return "", err
 	}
-	if res.IsError() {
-		err = NewResponseError(res)
-		return
-	}
-
-	if api.directConn == nil {
-		api.chainID = string(res.Body())
-	} else {
-		err = json.Unmarshal(res.Body(), &dres)
-		if err != nil {
-			return
-		}
-		api.chainID = dres.Result.NodeInfo.Network
-	}
-
-	chainID = api.chainID
-	return
+	//
+	api.chainID = respValue.Result.NodeInfo.Network
+	return api.chainID, nil
 }
 
 // Return current height (block number) of blockchain
@@ -174,22 +176,22 @@ func (api *API) apiGetHeight() (uint64, error) {
 			} `json:"blocks"`
 		} `json:"result"`
 	}
+	//request
 	res, err := api.client.rpc.R().Get("/blocks?limit=1&offset=0")
 	if err = processConnectionError(res, err); err != nil {
 		return 0, err
 	}
-	response := responseType{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := JsonRPCError{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return 0, err
-		}
-		return 0, fmt.Errorf("received response containing error: %s", responseError.Error())
+	//json decode
+	respValue, respErr := responseType{}, JsonRPCError{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.InternalError.Code != 0
+	})
+	if err != nil {
+		return 0, joinErrors(err, respErr)
 	}
-	if len(response.Result.Blocks) > 0 {
-		return response.Result.Blocks[0].Height, nil
+	//process result
+	if len(respValue.Result.Blocks) > 0 {
+		return respValue.Result.Blocks[0].Height, nil
 	}
 	return 0, fmt.Errorf("Response without blocks")
 }
@@ -202,21 +204,21 @@ func (api *API) restGetHeight() (uint64, error) {
 			} `json:"sync_info"`
 		} `json:"result"`
 	}
+	//request
 	res, err := api.client.rpc.R().Get("/status")
 	if err = processConnectionError(res, err); err != nil {
 		return 0, err
 	}
-	response := responseType{}
-	err = json.Unmarshal(res.Body(), &response)
+	//json decode
+	respValue, respErr := responseType{}, JsonRPCError{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.Result.SyncInfo.Height > "", respErr.InternalError.Code != 0
+	})
 	if err != nil {
-		responseError := JsonRPCError{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return 0, err
-		}
-		return 0, fmt.Errorf("received response containing error: %s", responseError.Error())
+		return 0, joinErrors(err, respErr)
 	}
-	return strconv.ParseUint(response.Result.SyncInfo.Height, 10, 64)
+	//process result
+	return strconv.ParseUint(respValue.Result.SyncInfo.Height, 10, 64)
 }
 
 // newConfig initializes new Cosmos SDK configuration.

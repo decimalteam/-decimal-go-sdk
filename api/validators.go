@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -68,7 +67,7 @@ type respDirectValidators struct {
 	Result []respDirectValidator `json:"result"`
 }
 
-func directResonse2Validator(dres respDirectValidator) *ValidatorResult {
+func directResponse2Validator(dres respDirectValidator) *ValidatorResult {
 	power := "0"
 	if len(dres.Stake) > 18 {
 		power = dres.Stake[0 : len(dres.Stake)-18]
@@ -98,76 +97,72 @@ func directResonse2Validator(dres respDirectValidator) *ValidatorResult {
 // Candidates requests full list of candidates (validators which does not participate in block production and consensus).
 // Gateway: ok, REST/RPC: none
 func (api *API) Candidates() ([]*ValidatorResult, error) {
-
-	// TODO: undefined candidates in REST.
-	url := "/validators/candidate"
-	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	// TODO: implement candidates in REST.
+	if api.directConn != nil {
+		return nil, ErrNotImplemented
+	}
+	//request
+	res, err := api.client.rest.R().Get("/validators/candidate")
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	//json decode
+	respValue, respErr := ValidatorsResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
-	response := ValidatorsResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result.Validators, nil
+	//process result
+	return respValue.Result.Validators, nil
 }
 
 // Validators requests full list of currently active validators.
 // Gateway: ok, REST/RPC: partial
 func (api *API) Validators() ([]*ValidatorResult, error) {
-	var (
-		url  = ""
-		gres = ValidatorsResponse{}
-		dres = respDirectValidators{}
-	)
-
 	if api.directConn == nil {
-		url = "/validators/validator"
+		return api.apiValidators()
 	} else {
-		url = "/validator/validators"
+		return api.restValidators()
 	}
+}
 
-	res, err := api.client.rest.R().Get(url)
+func (api *API) apiValidators() ([]*ValidatorResult, error) {
+	//request
+	res, err := api.client.rest.R().Get("/validators/validator")
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	//json decode
+	respValue, respErr := ValidatorsResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
+	}
+	//process result
+	return respValue.Result.Validators, nil
+}
+func (api *API) restValidators() ([]*ValidatorResult, error) {
+	//request
+	res, err := api.client.rest.R().Get("/validator/validators")
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	//json decode
+	respValue := respDirectValidators{}
+	err = universalJSONDecode(res.Body(), &respValue, nil, func() (bool, bool) {
+		return len(respValue.Result) > 0, false
+	})
 	if err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
-	}
-
-	if api.directConn == nil {
-		err = json.Unmarshal(res.Body(), &gres)
-	} else {
-		err = json.Unmarshal(res.Body(), &dres)
-	}
-
-	if err != nil || (api.directConn == nil && !gres.OK) {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	if api.directConn == nil {
-		return gres.Result.Validators, nil
-	}
-
+	//process result
 	validators := []*ValidatorResult{}
-	for _, val := range dres.Result {
-		validators = append(validators, directResonse2Validator(val))
+	for _, val := range respValue.Result {
+		validators = append(validators, directResponse2Validator(val))
 	}
 
 	return validators, nil
@@ -176,49 +171,48 @@ func (api *API) Validators() ([]*ValidatorResult, error) {
 // Validator requests full information about validator with specified address.
 // Gateway: ok, REST/RPC: partial
 func (api *API) Validator(address string) (*ValidatorResult, error) {
+	if api.directConn == nil {
+		return api.apiValidator(address)
+	} else {
+		return api.restValidator(address)
+	}
+}
+
+func (api *API) apiValidator(address string) (*ValidatorResult, error) {
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/validator/%s", address))
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	//json decode
+	respValue, respErr := ValidatorResponse{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
+	}
+	//process result
+	return respValue.Result, nil
+}
+
+func (api *API) restValidator(address string) (*ValidatorResult, error) {
 	type respDirect struct {
 		Result respDirectValidator `json:"result"`
 	}
-
-	var (
-		url  = ""
-		gres = ValidatorResponse{}
-		dres = respDirect{}
-	)
-
-	if api.directConn == nil {
-		url = fmt.Sprintf("/validator/%s", address)
-	} else {
-		url = fmt.Sprintf("/validator/validators/%s", address)
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/validator/validators/%s", address))
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
 	}
-
-	res, err := api.client.rest.R().Get(url)
+	//json decode
+	respValue := respDirect{}
+	err = universalJSONDecode(res.Body(), &respValue, nil, func() (bool, bool) {
+		return respValue.Result.Address > "", false
+	})
 	if err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
-	}
-
-	if api.directConn == nil {
-		err = json.Unmarshal(res.Body(), &gres)
-	} else {
-		err = json.Unmarshal(res.Body(), &dres)
-	}
-
-	err = json.Unmarshal(res.Body(), &gres)
-	if err != nil || (api.directConn == nil && !gres.OK) {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	if api.directConn == nil {
-		return gres.Result, nil
-	}
-
-	return directResonse2Validator(dres.Result), nil
+	//process result
+	return directResponse2Validator(respValue.Result), nil
 }

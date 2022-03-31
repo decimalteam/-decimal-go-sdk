@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -25,74 +24,86 @@ type CoinResult struct {
 	ContractAddress string `json:"contractAddress"`
 }
 
-type respDirectCoin struct {
-	Result struct {
-		Symbol      string `json:"symbol"`
-		Title       string `json:"title"`
-		Crr         string `json:"constant_reserve_ratio"`
-		Reserve     string `json:"reserve"`
-		LimitVolume string `json:"limit_volume"`
-		Volume      string `json:"volume"`
-		Creator     string `json:"creator"`
-	} `json:"result"`
-}
-
-func directResult2Coin(response respDirectCoin) *CoinResult {
-	result := &CoinResult{}
-	result.Title = response.Result.Title
-	result.Symbol = response.Result.Symbol
-	crr, _ := strconv.ParseUint(response.Result.Crr, 10, 8)
-	result.Crr = uint8(crr)
-	result.Reserve = response.Result.Reserve
-	result.LimitVolume = response.Result.LimitVolume
-	result.Volume = response.Result.Volume
-	result.Creator = response.Result.Creator
-	return result
-}
-
 // Coin requests full information about coin with specified symbol.
 // Gateway: ok, REST/RPC: partial
 func (api *API) Coin(symbol string) (*CoinResult, error) {
+	if api.directConn == nil {
+		return api.apiCoin(symbol)
+	} else {
+		return api.restCoin(symbol)
+	}
+}
+
+func (api *API) apiCoin(symbol string) (*CoinResult, error) {
 	type respCoin struct {
 		OK     bool        `json:"ok"`
 		Result *CoinResult `json:"result"`
 	}
-
-	url := fmt.Sprintf("/coin/%s", symbol)
-
-	res, err := api.client.rest.R().Get(url)
-	// TODO: check error for 404 and 500
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/coin/%s", symbol))
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	//json decode
+	respValue, respErr := respCoin{}, JsonRPCInternalError{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.Code != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
+	}
+	//process result
+	return respValue.Result, nil
+}
+func (api *API) restCoin(symbol string) (*CoinResult, error) {
+	type respDirectCoin struct {
+		Result struct {
+			Symbol      string `json:"symbol"`
+			Title       string `json:"title"`
+			Crr         string `json:"constant_reserve_ratio"`
+			Reserve     string `json:"reserve"`
+			LimitVolume string `json:"limit_volume"`
+			Volume      string `json:"volume"`
+			Creator     string `json:"creator"`
+		} `json:"result"`
+	}
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/coin/%s", symbol))
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	//json decode
+	respValue := respDirectCoin{}
+	err = universalJSONDecode(res.Body(), &respValue, nil, func() (bool, bool) {
+		return respValue.Result.Symbol > "", false
+	})
 	if err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
-	}
-	if api.directConn == nil {
-		response := respCoin{}
-		err = json.Unmarshal(res.Body(), &response)
-		if err != nil || !response.OK {
-			responseError := JsonRPCInternalError{}
-			err = json.Unmarshal(res.Body(), &responseError)
-			if err != nil {
-				return nil, err
-			}
-			return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-		}
-		return response.Result, nil
-	} else {
-		response := respDirectCoin{}
-		err = json.Unmarshal(res.Body(), &response)
-		if err != nil {
-			return nil, err
-		}
-		return directResult2Coin(response), nil
-	}
+	//process result
+	result := &CoinResult{}
+	result.Title = respValue.Result.Title
+	result.Symbol = respValue.Result.Symbol
+	crr, _ := strconv.ParseUint(respValue.Result.Crr, 10, 8)
+	result.Crr = uint8(crr)
+	result.Reserve = respValue.Result.Reserve
+	result.LimitVolume = respValue.Result.LimitVolume
+	result.Volume = respValue.Result.Volume
+	result.Creator = respValue.Result.Creator
+	return result, nil
 }
 
 // Coins requests full information about all coins.
 // Gateway: ok, REST/RPC: partial
 func (api *API) Coins() ([]*CoinResult, error) {
+	if api.directConn == nil {
+		return api.apiCoins()
+	} else {
+		return api.restCoins()
+	}
+}
+
+func (api *API) apiCoins() ([]*CoinResult, error) {
 	type respCoins struct {
 		OK     bool `json:"ok"`
 		Result struct {
@@ -100,53 +111,44 @@ func (api *API) Coins() ([]*CoinResult, error) {
 			Coins []*CoinResult `json:"coins"`
 		} `json:"result"`
 	}
+	//request
+	res, err := api.client.rest.R().Get("/coin")
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	//json decode
+	respValue, respErr := respCoins{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
+	}
+	//process result
+	return respValue.Result.Coins, nil
+}
+
+func (api *API) restCoins() ([]*CoinResult, error) {
 	type respDirectCoins struct {
 		Result []string
 	}
-
-	var (
-		gres = respCoins{}
-		dres = respDirectCoins{}
-		url  = ""
-	)
-
-	if api.directConn == nil {
-		url = "/coin"
-	} else {
-		url = "/coins"
+	//request
+	res, err := api.client.rest.R().Get("/coins")
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
 	}
-
-	res, err := api.client.rest.R().Get(url)
+	//json decode
+	respValue := respDirectCoins{}
+	err = universalJSONDecode(res.Body(), &respValue, nil, func() (bool, bool) {
+		return len(respValue.Result) > 0, false
+	})
 	if err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
-	}
-
-	if api.directConn == nil {
-		err = json.Unmarshal(res.Body(), &gres)
-	} else {
-		err = json.Unmarshal(res.Body(), &dres)
-	}
-
-	if err != nil || (api.directConn == nil && !gres.OK) {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	if api.directConn == nil {
-		return gres.Result.Coins, nil
-	}
-
+	//process result
 	coins := []*CoinResult{}
 	errstr := ""
-
-	for _, val := range dres.Result {
+	for _, val := range respValue.Result {
 		coin, err := api.Coin(val)
 		if err != nil {
 			errstr += err.Error()
@@ -154,10 +156,9 @@ func (api *API) Coins() ([]*CoinResult, error) {
 		}
 		coins = append(coins, coin)
 	}
-
+	err = nil
 	if errstr != "" {
 		err = errors.New(errstr)
 	}
-
 	return coins, err
 }

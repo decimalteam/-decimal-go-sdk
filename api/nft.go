@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -60,11 +59,9 @@ type NFTShort struct {
 // Get all NFT in short format
 func (api *API) NFTList() ([]*NFTShort, error) {
 	if api.directConn == nil {
-		data, err := api.apiNFTList()
-		return data, err
+		return api.apiNFTList()
 	} else {
-		data, err := api.restNFTList()
-		return data, err
+		return api.restNFTList()
 	}
 }
 
@@ -82,28 +79,22 @@ func (api *API) apiNFTList() ([]*NFTShort, error) {
 			RawUnbound        string `json:"unbound"`
 		} `json:"result"`
 	}
+	//request
 	res, err := api.client.rest.R().Get("/nfts")
-	// initial errors: connection/404/...
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+	//json decode
+	respValue, respErr := responseType{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
 	if err != nil {
-		return []*NFTShort{}, err
+		return nil, joinErrors(err, respErr)
 	}
-	if res.IsError() {
-		return []*NFTShort{}, NewResponseError(res)
-	}
-	response := responseType{}
-	err = json.Unmarshal(res.Body(), &response)
-	// errors in respose
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return []*NFTShort{}, err
-		}
-		return []*NFTShort{}, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-	//
+	//process
 	err = nil
-	for _, rec := range response.Result {
+	for _, rec := range respValue.Result {
 		q, err := strconv.ParseInt(rec.RawQuantity, 10, 64)
 		if err != nil {
 			return []*NFTShort{}, fmt.Errorf("Cannot convert Quantity '%s' to int", rec.RawQuantity)
@@ -143,27 +134,36 @@ func (api *API) restNFTList() ([]*NFTShort, error) {
 		} `json:"result"`
 	}
 	// 1 get collection list
+	//request
 	res, err := api.client.rest.R().Get("/nft/denoms")
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return []*NFTShort{}, err
 	}
+	//json decode
 	response := responseDenomsType{}
-	err = json.Unmarshal(res.Body(), &response)
+	err = universalJSONDecode(res.Body(), &response, nil, func() (bool, bool) {
+		return len(response.Result) > 0, false
+	})
 	if err != nil {
 		return []*NFTShort{}, err
 	}
 	// 2 get nfts from collections
 	for _, denom := range response.Result {
+		//request
 		res, err := api.client.rest.R().Get(fmt.Sprintf("/nft/collection/%s", denom))
+		if err = processConnectionError(res, err); err != nil {
+			return []*NFTShort{}, err
+		}
+		//json decode
+		respValue := responseNFTType{}
+		err = universalJSONDecode(res.Body(), &respValue, nil, func() (bool, bool) {
+			return len(respValue.Result) > 0, false
+		})
 		if err != nil {
 			return []*NFTShort{}, err
 		}
-		response := responseNFTType{}
-		err = json.Unmarshal(res.Body(), &response)
-		if err != nil {
-			return []*NFTShort{}, err
-		}
-		for _, v1 := range response.Result {
+		//process
+		for _, v1 := range respValue.Result {
 			for _, v2 := range v1.NFTs {
 				result = append(result, &NFTShort{
 					Id:             v2.RawId,
@@ -184,11 +184,9 @@ func (api *API) restNFTList() ([]*NFTShort, error) {
 // Get NFT owned by account
 func (api *API) NFTByAddress(address string) ([]*NFT, error) {
 	if api.directConn == nil {
-		data, err := api.apiNFTByAddress(address)
-		return data, err
+		return api.apiNFTByAddress(address)
 	} else {
-		data, err := api.restNFTByAddress(address)
-		return data, err
+		return api.restNFTByAddress(address)
 	}
 }
 
@@ -199,27 +197,21 @@ func (api *API) apiNFTByAddress(address string) ([]*NFT, error) {
 			Tokens []*NFT `json:"tokens"`
 		}
 	}
+	//request
 	res, err := api.client.rest.R().Get(fmt.Sprintf("/address/%s/nfts", address))
-	// initial errors: connection/404/...
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return []*NFT{}, err
 	}
-	if res.IsError() {
-		return []*NFT{}, NewResponseError(res)
+	//json decode
+	respValue, respErr := responseType{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-	response := responseType{}
-	err = json.Unmarshal(res.Body(), &response)
-	// errors in respose
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return []*NFT{}, err
-		}
-		return []*NFT{}, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-	//
-	return response.Result.Tokens, nil
+	//process result
+	return respValue.Result.Tokens, nil
 }
 
 //TODO: make full RPC/REST response
@@ -252,11 +244,13 @@ func (api *API) restNFTByAddress(address string) ([]*NFT, error) {
 	}
 
 	res, err := api.client.rest.R().Get(fmt.Sprintf("/nft/owner/%s", address))
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return []*NFT{}, err
 	}
 	response := responseType{}
-	err = json.Unmarshal(res.Body(), &response)
+	err = universalJSONDecode(res.Body(), &response, nil, func() (bool, bool) {
+		return true, false
+	})
 	if err != nil {
 		return []*NFT{}, err
 	}
@@ -266,18 +260,20 @@ func (api *API) restNFTByAddress(address string) ([]*NFT, error) {
 		for _, idd := range col.Ids {
 			base := &NFT{Id: idd, CollectionName: col.Denom}
 			res, err := api.client.rest.R().Get(fmt.Sprintf("/nft/collection/%s/nft/%s", col.Denom, idd))
+			if err = processConnectionError(res, err); err != nil {
+				continue
+			}
+			respValue := responseNFTType{}
+			err = universalJSONDecode(res.Body(), &respValue, nil, func() (bool, bool) {
+				return respValue.Result.Value.Reserve > "", false
+			})
 			if err != nil {
 				continue
 			}
-			response := responseNFTType{}
-			err = json.Unmarshal(res.Body(), &response)
-			if err != nil {
-				continue
-			}
-			base.AllowMint = response.Result.Value.AllowMint
-			base.TokenURI = response.Result.Value.TokenURI
-			base.TotalReserve = response.Result.Value.Reserve
-			for _, own := range response.Result.Value.Owners.Owners {
+			base.AllowMint = respValue.Result.Value.AllowMint
+			base.TokenURI = respValue.Result.Value.TokenURI
+			base.TotalReserve = respValue.Result.Value.Reserve
+			for _, own := range respValue.Result.Value.Owners.Owners {
 				base.NFTOwner = append(base.NFTOwner, NFTOwner{Address: own.Address})
 			}
 			result = append(result, base)
@@ -289,36 +285,26 @@ func (api *API) restNFTByAddress(address string) ([]*NFT, error) {
 // Get NTF by id
 // TODO: implement for directConn.
 func (api *API) NFT(id string) (*NFT, error) {
+	if api.directConn != nil {
+		return nil, ErrNotImplemented
+	}
 	type responseNFTType struct {
 		OK     bool `json:"ok"`
 		Result *NFT `json:"result"`
 	}
-	var url string
-
-	if api.directConn == nil {
-		url = fmt.Sprintf("/nfts/%s", id)
-	} else {
-		return nil, ErrNotImplemented
-	}
-
-	res, err := api.client.rest.R().Get(url)
-	if err != nil {
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/nfts/%s", id))
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	//json decode
+	respValue, respErr := responseNFTType{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.OK, respErr.StatusCode != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
-
-	response := responseNFTType{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result, nil
+	//process result
+	return respValue.Result, nil
 }
