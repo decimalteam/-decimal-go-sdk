@@ -67,6 +67,18 @@ type TxAttributeBase64 struct {
 	Value string `json:"value"`
 }
 
+// TxResponse by Hash contains API response.
+type TxResponse struct {
+	OK     bool     `json:"ok"`
+	Result *TxCheck `json:"result"`
+}
+
+// TxCheck contains API response fields.
+type TxCheck struct {
+	Hash   string `json:"hash"`
+	Status string `json:"status"`
+}
+
 // Transaction requests full information about transaction with specified hash.
 // NOTE: It is expected that `txHash` encoded in hex format and written
 // in capital letters and without "0x" at the beginning.
@@ -79,7 +91,7 @@ func (api *API) Transaction(txHash string) (*TransactionResult, error) {
 }
 
 func (api *API) apiTransaction(txHash string) (*TransactionResult, error) {
-	//request
+	// request
 	res, err := api.client.rpc.R().Get(fmt.Sprintf("/rpc/tx?hash=%s", txHash))
 	if err = processConnectionError(res, err); err != nil {
 		return nil, err
@@ -101,7 +113,7 @@ func (api *API) apiTransaction(txHash string) (*TransactionResult, error) {
 }
 
 func (api *API) restTransaction(txHash string) (*TransactionResult, error) {
-	//request
+	// request
 	res, err := api.client.rest.R().Get(fmt.Sprintf("/txs/%s", txHash))
 	if err = processConnectionError(res, err); err != nil {
 		return nil, err
@@ -121,7 +133,67 @@ func (api *API) restTransaction(txHash string) (*TransactionResult, error) {
 	return respValue.Result, nil
 }
 
-//TransactionsByBlock return all transactions hashes in block
+func (api *API) CheckTransaction(txHash string) (*TxCheck, error) {
+	if api.directConn == nil {
+		return api.apiCheckTransaction(txHash)
+	} else {
+		return api.restCheckTransaction(txHash)
+	}
+}
+
+func (api *API) restCheckTransaction(txHash string) (*TxCheck, error) {
+	url := fmt.Sprintf("/tx/%s", txHash)
+	res, err := api.client.rest.R().Get(url)
+
+	if err != nil {
+		return nil, err
+	}
+	if res.IsError() {
+		return nil, NewResponseError(res)
+	}
+
+	response := TxResponse{}
+	err = json.Unmarshal(res.Body(), &response)
+	if err != nil || !response.OK {
+		responseError := Error{}
+		err = json.Unmarshal(res.Body(), &responseError)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
+	}
+	fmt.Println(*response.Result)
+
+	return response.Result, nil
+}
+
+func (api *API) apiCheckTransaction(txHash string) (*TxCheck, error) {
+	url := fmt.Sprintf("/tx/%s", txHash)
+	res, err := api.client.rpc.R().Get(url)
+
+	if err != nil {
+		return nil, err
+	}
+	if res.IsError() {
+		return nil, NewResponseError(res)
+	}
+
+	response := TxResponse{}
+	err = json.Unmarshal(res.Body(), &response)
+	if err != nil || !response.OK {
+		responseError := Error{}
+		err = json.Unmarshal(res.Body(), &responseError)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
+	}
+	fmt.Println(*response.Result)
+
+	return response.Result, nil
+}
+
+// TransactionsByBlock return all transactions hashes in block
 func (api *API) TransactionsByBlock(height uint64) ([]string, error) {
 	if api.directConn == nil {
 		return api.apiTransactionsByBlock(height)
@@ -140,12 +212,12 @@ func (api *API) apiTransactionsByBlock(height uint64) ([]string, error) {
 			} `json:"txs"`
 		} `json:"result"`
 	}
-	//request
+	// request
 	res, err := api.client.rpc.R().Get(fmt.Sprintf("/block/%d/txs", height))
 	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	//json decode
+	// json decode
 	respValue, respErr := responseType{}, JsonRPCError{}
 	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
 		return respValue.OK, respErr.InternalError.Code != 0
@@ -153,7 +225,7 @@ func (api *API) apiTransactionsByBlock(height uint64) ([]string, error) {
 	if err != nil {
 		return nil, joinErrors(err, respErr)
 	}
-	//process result
+	// process result
 	result := make([]string, 0, respValue.Result.Count)
 	for _, tx := range respValue.Result.Txs {
 		result = append(result, tx.Hash)
@@ -183,7 +255,7 @@ func (api *API) restTransactionsByBlock(height uint64) ([]string, error) {
 		return nil, err
 	}
 	// process result
-	//TODO: pagination
+	// TODO: pagination
 	totalCount, _ := strconv.ParseUint(respValue.TotalCount, 10, 64)
 	result := make([]string, 0, totalCount)
 	for _, tx := range respValue.Txs {
@@ -192,9 +264,9 @@ func (api *API) restTransactionsByBlock(height uint64) ([]string, error) {
 	return result, nil
 }
 
-////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////
 // TxAttributeBase64
-////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////
 
 // MarshalJSON implements Marshaler interface.
 func (a *TxAttributeBase64) MarshalJSON() ([]byte, error) {

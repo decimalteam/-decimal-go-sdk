@@ -4,7 +4,7 @@ package main
 
 import (
 	"bytes"
-	//"io/fs"
+	// "io/fs"
 	"os"
 
 	"encoding/json"
@@ -34,7 +34,7 @@ const (
 	testMultisigParticipantAddress = "dx173lnn7jjuym5rwp23aufhnwshylrdemcswtcg5"
 	testMultisigAddress            = "dx1nkujpc7fj72cfdyrtj7f090wgdakjvnyy6dak5"
 	testCoin                       = "tdel"
-	testTxHash                     = "F7BEE024F6EECD0909EF90B5C6A46FE6AFD7AEF061EE02BB73F800960EF57326"
+	testTxHash                     = "630E29504A21E6816E5B74DE953A33E6D2A37D1ADAA4815ECF5C8F6246299209"
 	testNFTTokenId                 = "rt7c7255cd002f1595a8d8a00ce11ffce25a315t"
 
 	testWrongSenderAddress              = "dx12k95ukkqzjhkm9d94866r4d9fwx7tsd82r8p00"
@@ -49,9 +49,9 @@ const (
 	testWrongProposalId                 = 100500
 )
 
-////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////
 // Decimal SDK example initializing
-////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////
 
 /*
 func init() {
@@ -87,7 +87,7 @@ func init() {
 }
 */
 
-//resty logger implementation
+// resty logger implementation
 type log2log struct{}
 
 type Logger interface {
@@ -106,9 +106,9 @@ func (l log2log) Debugf(format string, v ...interface{}) {
 	log.Printf("L2LDBG:"+format, v...)
 }
 
-////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////
 // Decimal SDK example running
-////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////
 
 // possible api host+options combinations
 var apiEndpoints = []struct {
@@ -118,14 +118,14 @@ var apiEndpoints = []struct {
 	netId      string
 	baseCoin   string
 }{
-	{"testnet-gate", "https://testnet-gate.decimalchain.com/api", nil, "testnet", "tdel"},
+	// {"testnet-gate", "https://testnet-gate.decimalchain.com/api", nil, "testnet", "tdel"},
 	{"devnet-gate", "https://devnet-gate.decimalchain.com/api", nil, "devnet", "del"},
 	{"devnet-local", "http://localhost", &decapi.DirectConn{}, "devnet", "del"}, // direct: RPC(port 26657)+REST(port 1317)
-	{"testnet-local", "http://localhost",
-		&decapi.DirectConn{PortRPC: ":26658", PortREST: ":1318"}, "testnet", "tdel"}, // direct: RPC(port 26658)+REST(port 1317)
+	// {"testnet-local", "http://localhost",
+	// 	&decapi.DirectConn{PortRPC: ":26658", PortREST: ":1318"}, "testnet", "tdel"}, // direct: RPC(port 26658)+REST(port 1317)
 }
 
-//helper function
+// helper function
 func formatAsJSON(obj interface{}) string {
 	objStr, err := json.MarshalIndent(obj, "", "    ")
 	if err != nil {
@@ -147,6 +147,7 @@ func main() {
 	var checkStakes = flag.Bool("check-stakes", false, "Check stakes requests")
 	var checkTransaction = flag.Bool("check-transaction", false, "Check transaction requests")
 	var checkSend bool = false
+	var checkStatusTx bool = true
 	var checkWallets bool = false
 	flag.Parse()
 
@@ -161,7 +162,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
-	//logfile, err := os.OpenFile(*logfileName, os.O_CREATE, 0644)
+	// logfile, err := os.OpenFile(*logfileName, os.O_CREATE, 0644)
 	logfile, err := os.Create(*logfileName)
 	if err != nil {
 		log.Fatalln("Cannot create log file")
@@ -182,7 +183,7 @@ func main() {
 	}
 	// 2
 	chainId := exampleApiBlockchainInfo(api)
-	////////////////////
+	// //////////////////
 	if checkWallets {
 		// 3
 		wallets := exampleApiCreateWallets()
@@ -193,7 +194,7 @@ func main() {
 		for i = 0; i < (len(wallets) - 1); i++ {
 			fillWallet(api, wallets[i].Address(), endpoint.netId)
 		}
-		time.Sleep(time.Second * 10) //wait for transaction
+		time.Sleep(time.Second * 10) // wait for transaction
 		// 4
 		for i = 0; i < len(wallets); i++ {
 			log.Printf("Assign wallet #%d", i)
@@ -216,7 +217,7 @@ func main() {
 			log.Printf("Account info: %s", formatAsJSON(adrInfo))
 		}
 	}
-	////////////////////
+	// //////////////////
 	if *checkCoins {
 		coinSymbols := []struct {
 			symbol string
@@ -239,7 +240,7 @@ func main() {
 			log.Printf("Coin info: %s", formatAsJSON(coinInfo))
 		}
 	}
-	////////////////////
+	// //////////////////
 	if *checkValidators {
 		log.Printf("Validators")
 		validators, err := api.Validators()
@@ -277,7 +278,7 @@ func main() {
 			log.Printf("Candidates info: %s", formatAsJSON(cands))
 		}
 	}
-	////////////////////
+	// //////////////////
 	if *checkProposals {
 		log.Printf("Proposals")
 		props, err := api.Proposals()
@@ -302,7 +303,7 @@ func main() {
 		}
 		log.Printf("Proposal info: %s", formatAsJSON(prop))
 	}
-	////////////////////
+	// //////////////////
 	if *checkNFT {
 		log.Printf("NFTs")
 		log.Printf("Get NFT list")
@@ -332,11 +333,11 @@ func main() {
 			log.Printf("NFTByAddress: %s", formatAsJSON(data))
 		}
 	}
-	////////////////////
+	// //////////////////
 	if *checkMultisig {
 
 	}
-	////////////////////
+	// //////////////////
 	if *checkStakes {
 		log.Printf("Stakes")
 		for _, adr := range []string{
@@ -353,12 +354,15 @@ func main() {
 			log.Printf("Stakes info: %s", formatAsJSON(stakes))
 		}
 	}
-	////////////////////
+	// //////////////////
 	if checkSend {
 		testSend(api)
-		//testGovProposal(api)
+		// testGovProposal(api)
 	}
-	////////////////////
+	if checkStatusTx {
+		api.CheckTransaction(testTxHash)
+	}
+	// //////////////////
 	if *checkTransaction {
 		txs := []string{}
 		last_block, err := api.GetHeight()
@@ -383,7 +387,7 @@ func main() {
 		}
 	}
 
-	////////////////////
+	// //////////////////
 	log.Printf("END test endpoint")
 	log.Println("--------------------------")
 
@@ -433,7 +437,7 @@ func exampleApiCreateWallets() []*wallet.Account {
 	return res
 }
 
-//devnet/testnet 15k del request
+// devnet/testnet 15k del request
 func fillWallet(api *decapi.API, address string, network string) {
 	log.Printf("Fill wallet %s on net %s", address, network)
 	body := bytes.NewBufferString(fmt.Sprintf("{\"address\":\"%s\",\"network\":\"%s\"}", address, network))
@@ -479,7 +483,7 @@ func testSend(api *decapi.API) {
 	acc1 = acc1.WithChainID(chainId)
 	acc2 = acc2.WithChainID(chainId)
 
-	//send in both directions
+	// send in both directions
 	testCases := []struct {
 		accFrom *wallet.Account
 		accTo   *wallet.Account
@@ -490,7 +494,7 @@ func testSend(api *decapi.API) {
 	for _, tst := range testCases {
 		bindAcc(api, acc1)
 		bindAcc(api, acc2)
-		//prepare transaction
+		// prepare transaction
 		sender, err := sdk.AccAddressFromBech32(tst.accFrom.Address())
 		if err != nil {
 			log.Printf("ERROR: AccAddressFromBech32 %s->%s", tst.accFrom.Address(), err.Error())
@@ -499,7 +503,7 @@ func testSend(api *decapi.API) {
 		if err != nil {
 			log.Printf("ERROR: AccAddressFromBech32 %s->%s", tst.accTo.Address(), err.Error())
 		}
-		//10^18
+		// 10^18
 		amount := sdk.NewInt(1500000000000000000) // 1.5
 		coin := sdk.NewCoin("del", amount)
 
@@ -545,7 +549,7 @@ func testInvalidSend(api *decapi.API) {
 	acc1 = acc1.WithChainID(chainId)
 	acc2 = acc2.WithChainID(chainId)
 
-	//send in both directions
+	// send in both directions
 	testCases := []struct {
 		accFrom *wallet.Account
 		accTo   *wallet.Account
@@ -556,7 +560,7 @@ func testInvalidSend(api *decapi.API) {
 	for _, tst := range testCases {
 		bindAcc(api, acc1)
 		bindAcc(api, acc2)
-		//prepare transaction
+		// prepare transaction
 		sender, err := sdk.AccAddressFromBech32(tst.accFrom.Address())
 		if err != nil {
 			log.Printf("ERROR: AccAddressFromBech32 %s->%s", tst.accFrom.Address(), err.Error())
@@ -565,7 +569,7 @@ func testInvalidSend(api *decapi.API) {
 		if err != nil {
 			log.Printf("ERROR: AccAddressFromBech32 %s->%s", tst.accTo.Address(), err.Error())
 		}
-		//10^18
+		// 10^18
 		amount := sdk.NewInt(1500000000000000000) // 1.5
 		coin := sdk.NewCoin("del0", amount)
 
@@ -615,8 +619,8 @@ func testGovProposal(api *decapi.API) {
 	}
 
 	msg := decapi.MsgSubmitProposal{}
-	//enc := []byte(`{"content":{"title":"test title", "description":"test"}}`)
-	//json.Unmarshal(enc, &msg)
+	// enc := []byte(`{"content":{"title":"test title", "description":"test"}}`)
+	// json.Unmarshal(enc, &msg)
 	msg.Content.Title = "test title"
 	msg.Content.Description = "test"
 	msg.Proposer = sender
