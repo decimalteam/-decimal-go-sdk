@@ -34,7 +34,7 @@ const (
 	testMultisigParticipantAddress = "dx173lnn7jjuym5rwp23aufhnwshylrdemcswtcg5"
 	testMultisigAddress            = "dx1nkujpc7fj72cfdyrtj7f090wgdakjvnyy6dak5"
 	testCoin                       = "tdel"
-	testTxHash                     = "630E29504A21E6816E5B74DE953A33E6D2A37D1ADAA4815ECF5C8F6246299209"
+	testTxHash                     = "27226202F793A3B39DE4CEE186C0233A25B5242DA85F145C301F3B1EA975B7A6"
 	testNFTTokenId                 = "rt7c7255cd002f1595a8d8a00ce11ffce25a315t"
 
 	testWrongSenderAddress              = "dx12k95ukkqzjhkm9d94866r4d9fwx7tsd82r8p00"
@@ -361,6 +361,7 @@ func main() {
 	}
 	if checkStatusTx {
 		api.CheckTransaction(testTxHash)
+		// fmt.Println(api.CheckTransaction(testTxHash))
 	}
 	// //////////////////
 	if *checkTransaction {

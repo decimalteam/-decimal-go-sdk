@@ -144,12 +144,8 @@ func (api *API) CheckTransaction(txHash string) (*TxCheck, error) {
 func (api *API) restCheckTransaction(txHash string) (*TxCheck, error) {
 	url := fmt.Sprintf("/tx/%s", txHash)
 	res, err := api.client.rest.R().Get(url)
-
-	if err != nil {
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
-	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
 	}
 
 	response := TxResponse{}
@@ -162,33 +158,46 @@ func (api *API) restCheckTransaction(txHash string) (*TxCheck, error) {
 		}
 		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
 	}
-	fmt.Println(*response.Result)
 
 	return response.Result, nil
 }
 
 func (api *API) apiCheckTransaction(txHash string) (*TxCheck, error) {
-	url := fmt.Sprintf("/tx/%s", txHash)
-	res, err := api.client.rpc.R().Get(url)
-
-	if err != nil {
+	// request
+	res, err := api.client.rpc.R().Get(fmt.Sprintf("/rpc/tx?hash=%s", txHash))
+	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
-	if res.IsError() {
-		return nil, NewResponseError(res)
+	// json decode
+	respValue, respErr := TransactionResponse{}, JsonRPCError{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.Result != nil, respErr.InternalError.Code != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
 	}
+	//
+	// Parse `log` value presented as string to []TxLog array
+	txLogs := []TxLog{}
+	json.Unmarshal([]byte(respValue.Result.TxResult.Log), &txLogs)
+	respValue.Result.TxResult.LogParsed = txLogs
 
-	response := TxResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
+	result := TxCheck{}
+	result.Hash = respValue.Result.Hash
+	switch respValue.Result.TxResult.Code {
+	case 0:
+		result.Status = "Success"
+	case 1:
+		result.Status = "EncodingError"
+	case 2:
+		result.Status = "BadNonce"
+	case 3:
+		result.Status = "Unauthorized"
+	case 4:
+		result.Status = "UnknownError"
 	}
-	fmt.Println(*response.Result)
+	response := TxResponse{}
+	response.Result = &result
 
 	return response.Result, nil
 }
