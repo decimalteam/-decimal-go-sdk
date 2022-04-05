@@ -1,3 +1,9 @@
 .vscode
 .idea
 example_testing.log
+log-devnet-gate.log
+log-devnet-local.log
+log-testnet-gate.log
+log-testnet-local.log
+decimal-go-sdk
+example

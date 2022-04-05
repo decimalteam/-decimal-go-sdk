@@ -142,33 +142,12 @@ func (api *API) CheckTransaction(txHash string) (*TxCheck, error) {
 }
 
 func (api *API) restCheckTransaction(txHash string) (*TxCheck, error) {
-	url := fmt.Sprintf("/tx/%s", txHash)
-	res, err := api.client.rest.R().Get(url)
+	url := fmt.Sprintf("/tx?hash=0x%s", txHash)
+	res, err := api.client.rpc.R().Get(url)
 	if err = processConnectionError(res, err); err != nil {
 		return nil, err
 	}
 
-	response := TxResponse{}
-	err = json.Unmarshal(res.Body(), &response)
-	if err != nil || !response.OK {
-		responseError := Error{}
-		err = json.Unmarshal(res.Body(), &responseError)
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("received response containing error: %s", responseError.Error())
-	}
-
-	return response.Result, nil
-}
-
-func (api *API) apiCheckTransaction(txHash string) (*TxCheck, error) {
-	// request
-	res, err := api.client.rpc.R().Get(fmt.Sprintf("/rpc/tx?hash=%s", txHash))
-	if err = processConnectionError(res, err); err != nil {
-		return nil, err
-	}
-	// json decode
 	respValue, respErr := TransactionResponse{}, JsonRPCError{}
 	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
 		return respValue.Result != nil, respErr.InternalError.Code != 0
@@ -176,30 +155,44 @@ func (api *API) apiCheckTransaction(txHash string) (*TxCheck, error) {
 	if err != nil {
 		return nil, joinErrors(err, respErr)
 	}
-	//
-	// Parse `log` value presented as string to []TxLog array
-	txLogs := []TxLog{}
-	json.Unmarshal([]byte(respValue.Result.TxResult.Log), &txLogs)
-	respValue.Result.TxResult.LogParsed = txLogs
 
 	result := TxCheck{}
 	result.Hash = respValue.Result.Hash
 	switch respValue.Result.TxResult.Code {
 	case 0:
 		result.Status = "Success"
-	case 1:
-		result.Status = "EncodingError"
-	case 2:
-		result.Status = "BadNonce"
-	case 3:
-		result.Status = "Unauthorized"
-	case 4:
-		result.Status = "UnknownError"
+	default:
+		result.Status = "Failure"
 	}
-	response := TxResponse{}
-	response.Result = &result
 
-	return response.Result, nil
+	return &result, nil
+}
+
+func (api *API) apiCheckTransaction(txHash string) (*TxCheck, error) {
+	url := fmt.Sprintf("/rpc/tx?hash=%s", txHash)
+	res, err := api.client.rpc.R().Get(url)
+	if err = processConnectionError(res, err); err != nil {
+		return nil, err
+	}
+
+	respValue, respErr := TransactionResponse{}, JsonRPCError{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.Result != nil, respErr.InternalError.Code != 0
+	})
+	if err != nil {
+		return nil, joinErrors(err, respErr)
+	}
+
+	result := TxCheck{}
+	result.Hash = respValue.Result.Hash
+	switch respValue.Result.TxResult.Code {
+	case 0:
+		result.Status = "Success"
+	default:
+		result.Status = "Failure"
+	}
+
+	return &result, nil
 }
 
 // TransactionsByBlock return all transactions hashes in block

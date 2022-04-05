@@ -34,7 +34,7 @@ const (
 	testMultisigParticipantAddress = "dx173lnn7jjuym5rwp23aufhnwshylrdemcswtcg5"
 	testMultisigAddress            = "dx1nkujpc7fj72cfdyrtj7f090wgdakjvnyy6dak5"
 	testCoin                       = "tdel"
-	testTxHash                     = "27226202F793A3B39DE4CEE186C0233A25B5242DA85F145C301F3B1EA975B7A6"
+	testTxHash                     = "C8AA7641ED273B87EE9A378BACC217F020EE7BC946A557849838E3E9B6B30685"
 	testNFTTokenId                 = "rt7c7255cd002f1595a8d8a00ce11ffce25a315t"
 
 	testWrongSenderAddress              = "dx12k95ukkqzjhkm9d94866r4d9fwx7tsd82r8p00"
@@ -118,11 +118,11 @@ var apiEndpoints = []struct {
 	netId      string
 	baseCoin   string
 }{
-	// {"testnet-gate", "https://testnet-gate.decimalchain.com/api", nil, "testnet", "tdel"},
+	{"testnet-gate", "https://testnet-gate.decimalchain.com/api", nil, "testnet", "tdel"},
 	{"devnet-gate", "https://devnet-gate.decimalchain.com/api", nil, "devnet", "del"},
 	{"devnet-local", "http://localhost", &decapi.DirectConn{}, "devnet", "del"}, // direct: RPC(port 26657)+REST(port 1317)
-	// {"testnet-local", "http://localhost",
-	// 	&decapi.DirectConn{PortRPC: ":26658", PortREST: ":1318"}, "testnet", "tdel"}, // direct: RPC(port 26658)+REST(port 1317)
+	{"testnet-local", "http://localhost",
+		&decapi.DirectConn{PortRPC: ":26658", PortREST: ":1318"}, "testnet", "tdel"}, // direct: RPC(port 26658)+REST(port 1317)
 }
 
 // helper function
@@ -146,9 +146,9 @@ func main() {
 	var checkMultisig = flag.Bool("check-multisig", false, "Check Multisig requests")
 	var checkStakes = flag.Bool("check-stakes", false, "Check stakes requests")
 	var checkTransaction = flag.Bool("check-transaction", false, "Check transaction requests")
-	var checkSend bool = false
-	var checkStatusTx bool = true
-	var checkWallets bool = false
+	var checkSend = false
+	var checkStatusTx = true
+	var checkWallets = false
 	flag.Parse()
 
 	endpoint := apiEndpoints[0]
@@ -357,11 +357,29 @@ func main() {
 	// //////////////////
 	if checkSend {
 		testSend(api)
-		// testGovProposal(api)
 	}
 	if checkStatusTx {
-		api.CheckTransaction(testTxHash)
-		// fmt.Println(api.CheckTransaction(testTxHash))
+		var txs []string
+		lastBlock, err := api.GetHeight()
+		if err != nil {
+			log.Printf("ERROR: while get last block: %s", err.Error())
+		}
+		// try find at least 2 transactions in last 100 blocks
+		for block := lastBlock; (len(txs) < 2) && (block > lastBlock-100); block-- {
+			tmp, err := api.TransactionsByBlock(block)
+			if err != nil {
+				log.Printf("ERROR: while get txs: %s", err.Error())
+			}
+			txs = append(txs, tmp...)
+		}
+		// get tx status
+		for _, hash := range txs {
+			tx, err := api.CheckTransaction(hash)
+			if err != nil {
+				log.Printf("ERROR: while get tx: hash=%s, error=%s", hash, err.Error())
+			}
+			log.Printf("Tx result: %s", formatAsJSON(tx))
+		}
 	}
 	// //////////////////
 	if *checkTransaction {
