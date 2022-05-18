@@ -81,9 +81,9 @@ func (api *API) BroadcastSignedTransactionJSON(tx auth.StdTx, acc *wallet.Accoun
 		txJSON = fmt.Sprintf(`{"tx":%s,"mode":"sync"}`, txJSON[prefixLength:len(txJSON)-suffixLength])
 	}
 
-	// Send POST request at path `/rpc/txs` and wait for the response
+	// Send POST request at path `/rpc/txs-directly` and wait for the response
 	if api.directConn == nil {
-		url = "/rpc/txs"
+		url = "/rpc/txs-directly"
 	} else {
 		url = "/txs"
 	}

@@ -122,10 +122,49 @@ func (api *API) restAddress(address string) (*AddressResult, error) {
 // AccountNumberAndSequence requests account number and current sequence (nonce) of specified address.
 // Gateway: ok, REST/RPC: ok
 func (api *API) AccountNumberAndSequence(address string) (uint64, uint64, error) {
-	adrRes, err := api.Address(address)
+	if api.directConn == nil {
+		return api.apiAccountNumberAndSequence(address)
+	} else {
+		adrRes, err := api.Address(address)
+		if err != nil {
+			return 0, 0, err
+		}
+		seq, _ := strconv.ParseUint(adrRes.Nonce, 10, 64)
+		return adrRes.ID, seq, nil
+	}
+}
+
+func (api *API) apiAccountNumberAndSequence(address string) (uint64, uint64, error) {
+	type respAddress struct {
+		Height string `json:"height"`
+		Result struct {
+			Value struct {
+				Number   string `json:"account_number"`
+				Sequence string `json:"sequence"`
+			} `json:"value"`
+		} `json:"result"`
+	}
+	//request
+	res, err := api.client.rest.R().Get(fmt.Sprintf("/rpc/auth/accounts-with-unconfirmed-nonce/%s", address))
+	if err = processConnectionError(res, err); err != nil {
+		return 0, 0, err
+	}
+	//json decode
+	respValue, respErr := respAddress{}, Error{}
+	err = universalJSONDecode(res.Body(), &respValue, &respErr, func() (bool, bool) {
+		return respValue.Height != "", respErr.StatusCode != 0
+	})
+	if err != nil {
+		return 0, 0, joinErrors(err, respErr)
+	}
+	//process result
+	num, err := strconv.ParseUint(respValue.Result.Value.Number, 10, 64)
 	if err != nil {
 		return 0, 0, err
 	}
-	seq, _ := strconv.ParseUint(adrRes.Nonce, 10, 64)
-	return adrRes.ID, seq, nil
+	seq, err := strconv.ParseUint(respValue.Result.Value.Sequence, 10, 64)
+	if err != nil {
+		return 0, 0, err
+	}
+	return num, seq, nil
 }
