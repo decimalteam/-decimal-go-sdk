@@ -59,7 +59,7 @@ const (
 // command example: decd start
 // 2. launch deccli as rest-service with open REST port (default: 1317)
 // command example: deccli rest-server --chain-id=...  --laddr=tcp://localhost:1317  --node tcp://localhost:26657 --trust-node=true --unsafe-cors
-// In most cases direct connections responses are less informative agains gateway responses.
+// In most cases direct connections responses are less informative against gateway responses.
 // Direct connection is useful for multiple transaction sending.
 
 var directConnection = &decapi.DirectConn{PortRPC: ":26657", PortREST: ":1317"}
