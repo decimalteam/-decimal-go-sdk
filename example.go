@@ -146,7 +146,7 @@ func main() {
 	var checkMultisig = flag.Bool("check-multisig", false, "Check Multisig requests")
 	var checkStakes = flag.Bool("check-stakes", false, "Check stakes requests")
 	var checkTransaction = flag.Bool("check-transaction", false, "Check transaction requests")
-	var checkSend bool = false
+	var checkSend = flag.Bool("send", false, "Try to send transaction")
 	var checkWallets bool = false
 	flag.Parse()
 
@@ -354,8 +354,8 @@ func main() {
 		}
 	}
 	////////////////////
-	if checkSend {
-		testSend(api)
+	if *checkSend {
+		testSend(api, endpoint.baseCoin)
 		//testGovProposal(api)
 	}
 	////////////////////
@@ -387,16 +387,6 @@ func main() {
 	log.Printf("END test endpoint")
 	log.Println("--------------------------")
 
-	/*
-		// Request everything from the API
-		exampleRequests()
-		exampleWrongRequests()
-
-		// Create and broadcast transactions
-		exampleBroadcastMsgSendCoin()
-
-		exampleBroadcastMsgMintNFT()
-	*/
 }
 
 func exampleApiBlockchainInfo(api *decapi.API) string {
@@ -461,7 +451,7 @@ func bindAcc(api *decapi.API, acc *wallet.Account) {
 
 // Test example to send coins
 // It shows set up for wallets(accounts) and preparations for transactions
-func testSend(api *decapi.API) {
+func testSend(api *decapi.API, baseCoin string) {
 	log.Printf("START test send")
 	// make wallets
 	mnemonic1 := "plug tissue today frown increase race brown sail post march trick coconut laptop churn call child question match also spend play credit already travel"
@@ -501,7 +491,7 @@ func testSend(api *decapi.API) {
 		}
 		//10^18
 		amount := sdk.NewInt(1500000000000000000) // 1.5
-		coin := sdk.NewCoin("del", amount)
+		coin := sdk.NewCoin(baseCoin, amount)
 
 		// Prepare message
 		msg := decapi.NewMsgSendCoin(sender, coin, receiver)
@@ -567,7 +557,7 @@ func testInvalidSend(api *decapi.API) {
 		}
 		//10^18
 		amount := sdk.NewInt(1500000000000000000) // 1.5
-		coin := sdk.NewCoin("del0", amount)
+		coin := sdk.NewCoin("del0", amount)       // invalid coin
 
 		// Prepare message
 		msg := decapi.NewMsgSendCoin(sender, coin, receiver)

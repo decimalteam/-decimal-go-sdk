@@ -51,12 +51,26 @@ import (
 const (
     ...
 	hostURL = "https://testnet-gate.decimalchain.com/api"
+	nodeURL = "http://localhost"
 )
+
+// for direct connection to node you need:
+// 1. launch node with open tendermint RPC port (default: 26657), see https://help.decimalchain.com/masternode-launch/
+// command example: decd start
+// 2. launch deccli as rest-service with open REST port (default: 1317)
+// command example: deccli rest-server --chain-id=...  --laddr=tcp://localhost:1317  --node tcp://localhost:26657 --trust-node=true --unsafe-cors
+// In most cases direct connections responses are less informative against gateway responses.
+// Direct connection is useful for multiple transaction sending.
+
+var directConnection = &decapi.DirectConn{PortRPC: ":26657", PortREST: ":1317"}
 
 func main() {
     ...
-	// Create Decimal API instance
-	api := decapi.NewAPI(hostURL)
+	// Create Decimal API instance for gateway
+	api := decapi.NewAPI(hostURL, nil)
+
+	// Create Decimal API instance for direct connection to node
+	api := decapi.NewAPI(nodeURL, directConnection)
 
 	// Bind api-account
 	err = bindWalletWithAPI(account, api)
