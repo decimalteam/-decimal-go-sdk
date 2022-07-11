@@ -31,6 +31,8 @@ type (
 	MsgSellAllCoin = coin.MsgSellAllCoin
 	// MsgRedeemCheck .
 	MsgRedeemCheck = coin.MsgRedeemCheck
+	// MsgBurnCoin
+	MsgBurnCoin = coin.MsgBurnCoin
 )
 
 // Initializing functions.
@@ -51,6 +53,8 @@ var (
 	NewMsgSellAllCoin = coin.NewMsgSellAllCoin
 	// NewMsgRedeemCheck creates MsgRedeemCheck message.
 	NewMsgRedeemCheck = coin.NewMsgRedeemCheck
+	// NewMsgBurnCoin creates MsgBurnCoin message
+	NewMsgBurnCoin = coin.NewMsgBurnCoin
 )
 
 ////////////////////////////////////////////////////////////////

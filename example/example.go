@@ -147,6 +147,7 @@ func main() {
 	var checkStakes = flag.Bool("check-stakes", false, "Check stakes requests")
 	var checkTransaction = flag.Bool("check-transaction", false, "Check transaction requests")
 	var checkSend = flag.Bool("send", false, "Try to send transaction")
+	var checkBurn = flag.Bool("burn", false, "Try to burn coin")
 	var checkWallets bool = false
 	flag.Parse()
 
@@ -384,7 +385,13 @@ func main() {
 			log.Printf("Tx result: %s", formatAsJSON(tx))
 		}
 	}
-
+	////////////////////
+	if *checkBurn {
+		testBurnCoin(api)
+		//testInvalidSendCoin(api)
+		//testInvalidSendSignature(api)
+		//testGovProposal(api)
+	}
 	////////////////////
 	log.Printf("END test endpoint")
 	log.Println("--------------------------")
@@ -720,253 +727,15 @@ func testGovProposal(api *decapi.API) {
 	}
 }
 
-/*
-////////////////////////////////////////////////////////////////
-// Decimal API requesting data
-////////////////////////////////////////////////////////////////
-
-func exampleRequests() {
-
-	// Request information about the address
-	fmt.Println("Request information about the address")
-	address, err := api.Address(testSenderAddress)
-	if err != nil {
-		panic(err)
+func getPubKeyFromAccount() {
+	var mnemonics = []string{
+		"gasp history river forget aware wide dance velvet weather rain rail dry cliff assault coach jelly choose spirit shoulder isolate kidney outer trust message",
+		"section jeans evoke hockey result spell dish zero merge actress pink resource loan afford fitness install purity duck cannon ugly session stereo pattern spawn",
+		"citizen marine borrow just apology mistake trumpet border sauce drip smile current excuse sing shove puppy dial ticket margin fabric afraid identify rookie elite",
 	}
-	printAsJSON("Address response", address)
-
-	// Request information about all coins
-	fmt.Println("Request information about all coins")
-	coins, err := api.Coins()
-	if err != nil {
-		panic(err)
+	for _, mn := range mnemonics {
+		acc1, _ := wallet.NewAccountFromMnemonicWords(mn, "")
+		bt := acc1.PrivateKey().PublicKey().BytesCompressed()
+		fmt.Printf("mnemonic %s pub key =\n %#v\n", mn, bt)
 	}
-	printAsJSON("Coins response", coins)
-
-	// Request information about coin with specific symbol
-	fmt.Println("Request information about coin with specific symbol")
-	symbol := coins[0].Symbol
-	coin, err := api.Coin(symbol)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON(fmt.Sprintf("Coin %s response", symbol), coin)
-
-	// Request information about transaction with specific hash
-	fmt.Println("Request information about transaction with specific hash")
-	tx, err := api.Transaction(testTxHash)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Transaction response", tx)
-
-	// Request information about all candidates
-	fmt.Println("Request information about all candidates")
-	candidates, err := api.Candidates()
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Candidates response", candidates)
-
-	// Request information about all validators
-	fmt.Println("Request information about all validators")
-	validators, err := api.Validators()
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Validators response", validators)
-
-	// Request information about validator with specific address
-	fmt.Println("Request information about validator with specific address")
-	validator, err := api.Validator(testValidatorAddress)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Validator response", validator)
-
-	// Request information about stakes from the account with specific address
-	fmt.Println("Request information about stakes from the account with specific address")
-	stakes, err := api.Stakes(testStakesMakerAddress)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Stakes response", stakes)
-
-	// Request information about multisig wallets containing participant with specific address
-	fmt.Println("Request information about multisig wallets containing participant with specific address")
-	multisigWallets, err := api.MultisigWallets(testMultisigParticipantAddress)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Multisig wallets response", multisigWallets)
-
-	// Request information about multisig wallet with specific address
-	fmt.Println("Request information about multisig wallet with specific address")
-	multisigWallet, err := api.MultisigWallet(testMultisigAddress)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Multisig wallet response", multisigWallet)
-
-	// Request information about transactions of multisig wallet with specific address
-	fmt.Println("Request information about transactions of multisig wallet with specific address")
-	multisigTransactions, err := api.MultisigTransactions(testMultisigAddress)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Multisig transactions response", multisigTransactions)
-
-	// Request information about all govs
-	fmt.Println("Request information about all govs")
-	govs, err := api.Proposals()
-	if err != nil {
-		panic(err)
-		return
-	}
-	printAsJSON("Proposals transactions response", govs)
-
-	fmt.Println("Get first proposal response")
-	govId := govs[0].ProposalId
-	gov, err := api.Proposal(govId)
-	if err != nil {
-		panic(err)
-		return
-	}
-	printAsJSON(fmt.Sprintf("Proposal with Id = %d response", govId), gov)
 }
-
-func exampleWrongRequests() {
-
-	// Request information about the address
-	fmt.Println("(ERR)Request information about the address")
-	_, err := api.Address(testWrongSenderAddress)
-	if err == nil {
-		panic("You should get error")
-	}
-	fmt.Println("You got error: ", err)
-
-	// Request information about coin with specific symbol
-	fmt.Println("(ERR)Request information about coin with specific symbol")
-	_, err = api.Coin(testWrongCoin)
-	if err == nil {
-		panic("You should get error")
-	}
-	fmt.Println("You got error: ", err)
-
-	// Request information about transaction with specific hash
-	fmt.Println("(ERR)Request information about transaction with specific hash")
-	_, err = api.Transaction(testWrongTxHash)
-	if err == nil {
-		panic("You should get error")
-	}
-	fmt.Println("You got error: ", err)
-
-	// Request information about validator with specific address
-	fmt.Println("(ERR)Request information about validator with specific address")
-	_, err = api.Validator(testWrongValidatorAddress)
-	if err == nil {
-		panic("You should get error")
-	}
-	fmt.Println("You got error: ", err)
-
-	// Request information about specific proposal
-	fmt.Println("(ERR)Request proposal info")
-	_, err = api.Proposal(testWrongProposalId)
-	if err == nil {
-		panic("You should get error")
-	}
-	fmt.Println("You got error: ", err)
-}
-
-////////////////////////////////////////////////////////////////
-// Decimal API broadcasting transactions
-////////////////////////////////////////////////////////////////
-
-func exampleBroadcastMsgSendCoin() {
-
-	// Prepare message arguments
-	sender, err := sdk.AccAddressFromBech32(testSenderAddress)
-	if err != nil {
-		panic(err)
-	}
-	receiver, err := sdk.AccAddressFromBech32(testReceiverAddress)
-	if err != nil {
-		panic(err)
-	}
-	amount := sdk.NewInt(1500000000000000000) // 1.5
-	coin := sdk.NewCoin(testCoin, amount)
-
-	// Prepare message
-	msg := decapi.NewMsgSendCoin(sender, coin, receiver)
-
-	// Prepare transaction arguments
-	msgs := []sdk.Msg{msg}
-	feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
-	memo := ""
-
-	// Create signed transaction
-	tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, account)
-	if err != nil {
-		panic(err)
-	}
-
-	// Broadcast signed transaction
-	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx, account)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Broadcast transaction (in JSON format) response", broadcastTxResult)
-
-	// TODO: Block code executing until the transaction is placed in a block?
-}
-
-func exampleBroadcastMsgMintNFT() {
-	// Prepare message arguments
-	sender, err := sdk.AccAddressFromBech32(testSenderAddress)
-	if err != nil {
-		panic(err)
-	}
-	receiver, err := sdk.AccAddressFromBech32(testReceiverAddress)
-	if err != nil {
-		panic(err)
-	}
-	amount := sdk.NewInt(1500000000000000000) // 1.5
-	_ = sdk.NewCoin(testCoin, amount)
-
-	reserve, ok := sdk.NewIntFromString("100000000000000000000")
-	if !ok {
-		log.Println("invalid reserve")
-	}
-
-	// Prepare message
-	msg := decapi.NewMsgMintNFT(
-		sender,
-		receiver,
-		testNFTTokenId,
-		"cat", // denom
-		fmt.Sprintf("%s/nfts/%s", hostURL, testNFTTokenId), // tokenURI
-		sdk.NewInt(1), // quantity
-		reserve,       // reserve
-		true,          // allowMint
-	)
-
-	// Prepare transaction arguments
-	msgs := []sdk.Msg{msg}
-	feeCoins := sdk.NewCoins(sdk.NewCoin(testCoin, sdk.NewInt(0)))
-	memo := ""
-
-	// Create signed transaction
-	tx, err := api.NewSignedTransaction(msgs, feeCoins, memo, account)
-	if err != nil {
-		panic(err)
-	}
-
-	// Broadcast signed transaction
-	broadcastTxResult, err := api.BroadcastSignedTransactionJSON(tx, account)
-	if err != nil {
-		panic(err)
-	}
-	printAsJSON("Broadcast transaction nft/mint_nft response", broadcastTxResult)
-}
-*/
-// printAsJSON prints `obj` in JSON format.
