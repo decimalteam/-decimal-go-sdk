@@ -3,7 +3,7 @@ module bitbucket.org/decimalteam/decimal-go-sdk
 go 1.14
 
 require (
-	bitbucket.org/decimalteam/go-node v1.2.13
+	bitbucket.org/decimalteam/go-node v1.3.0
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cosmos/cosmos-sdk v0.39.3
