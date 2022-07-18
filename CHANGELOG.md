@@ -2,33 +2,39 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [v1.2.0](https://bitbucket.org/decimalteam/decimal-go-sdk/compare/v1.2.0..v1.1.0) - 2022-07-12
 
--  [`#11`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/11) feature/32303 feat: add message BurnCoin
--  [`30587d5`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/30587d568f6d0c16bcfaa9c3814bdb7fa793207d) feature/32303 fix: move code
--  [`c230f98`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/c230f982cb410fca2e632905c774eca180d73eb8) move example to partial folder
+### [v1.2.0](https://bitbucket.org/decimalteam/decimal-go-sdk/compare/v1.2.0..v1.1.0) - 2022-07-12
+#### Features
+-  Message "BurnCoin" add [`#32303`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/11)
+#### Fixes
+-  Move example to partial folder [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/c230f982cb410fca2e632905c774eca180d73eb8)
 
-#### [v1.1.0](https://bitbucket.org/decimalteam/decimal-go-sdk/compare/v1.1.0..v1.0.2) - 2022-05-18
+### [v1.1.0](https://bitbucket.org/decimalteam/decimal-go-sdk/compare/v1.1.0..v1.0.2) - 2022-05-18
+#### Features
+-  Universal JSON unmarshaling, split api/direct functions [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/e808959979f4207b19f48fe18d181c5c583867ff)
+-  Partial support for direct RPC/REST connection [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/6ddb5d9ff0598c82fea3ac09bbad69902ef3169e)
+-  Implementation and tests for transactions functions [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/878e56461339acd56766c2228dd7d3dc526490c4)
+#### Fixes
+-  Gateway nonce value and send transaction endpoint [`#29281`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/10)
 
--  [`#10`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/10) feature/29281 fix: gateway nonce value and send transaction endpoint
--  [`e808959`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/e808959979f4207b19f48fe18d181c5c583867ff) refactor: universal JSON unmarshaling, split api/direct functions
--  [`6ddb5d9`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/6ddb5d9ff0598c82fea3ac09bbad69902ef3169e) feat: add partial support for direct RPC/REST connection
--  [`878e564`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/878e56461339acd56766c2228dd7d3dc526490c4) feat: add and test transactions' functions
+### [v1.0.2](https://bitbucket.org/decimalteam/decimal-go-sdk/compare/v1.0.2..v1.0.1) - 2022-02-17
+#### Fixes
+-  Api requests and returning structures [`#22406`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/8)
 
-#### [v1.0.2](https://bitbucket.org/decimalteam/decimal-go-sdk/compare/v1.0.2..v1.0.1) - 2022-02-17
+### [v1.0.1](https://bitbucket.org/decimalteam/decimal-go-sdk/compare/v1.0.1..v1.0.0) - 2022-02-16
+#### Fixes
+-  Public key serialization [`#22406`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/7)
 
--  [`#8`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/8) hotfix/22406 fix: api requests and returning structures
-
-#### [v1.0.1](https://bitbucket.org/decimalteam/decimal-go-sdk/compare/v1.0.1..v1.0.0) - 2022-02-16
-
--  [`#7`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/7) hotfix/22406 fix: pubkey serialization
-
-#### v1.0.0 - 2022-02-15
-
--  [`#6`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/6) Hotfix/22400 master
--  [`#5`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/5) fix(22400): fix bug get info address (1)
--  [`#4`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/4) Feature/tx software upgrade
--  [`#3`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/3) Feature/571
--  [`c3ed816`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/c3ed816b9ea98af0c94da40cc30b95110b5bc5d1) Initial commit. Work on the SDK is still in progress.
--  [`a407077`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/a4070772137b964cf276b12975e231a63313faf8) Supported `wallet` package allowed to sign transaction. Slightly refactored the `api` package.
--  [`140c839`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/140c839d7ee4f692987e1c1e2f08584316941e2f) update readme
+### v1.0.0 - 2022-02-15
+#### Features
+-  Transactions software upgrade [`PR`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/4)
+-  Change readme [`#571`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/3)
+-  Implement the gov methods [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/ceb7c2206c84065bed9d53d538eb6fce759747f0)
+-  Update seq after successful transaction [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/bc83c8a6dfbbf25d207c828672c98fd83fefdbd2)
+-  Add nft metadata request [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/565d41666e6ebfb91200dc5aa34befc562e747eb)
+-  Swap transactions [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/ec0b83d488d360a2abbc5674892d4b2ae4389d19)
+#### Fixes
+-  Get info address bug fix [`#22400`](https://bitbucket.org/decimalteam/decimal-go-sdk/pull-requests/6)
+-  WIP Add missing transactions [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/845eeb03bff9c3f476168885aa6ffff38c6c44d8)
+-  Change transaction routes when registering codec [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/7079705730b7ddced8a0d63744b5d5c580179f5d)
+-  Address calculation from public key [`COMMIT`](https://bitbucket.org/decimalteam/decimal-go-sdk/commits/b37952ab7e4d2d1eb478923593598ab6e31d5a20)
