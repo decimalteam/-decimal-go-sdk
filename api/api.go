@@ -265,10 +265,10 @@ func newCodec() *codec.Codec {
 	cdc.RegisterConcrete(swap.MsgHTLT{}, "swap/msg_htlt", nil)
 	cdc.RegisterConcrete(swap.MsgRedeem{}, "swap/msg_redeem", nil)
 	cdc.RegisterConcrete(swap.MsgRefund{}, "swap/msg_refund", nil)
-	cdc.RegisterConcrete(swap.MsgRedeemV2{}, "swap/msg_redeemv2", nil)
-	cdc.RegisterConcrete(swap.MsgChainDeactivate{}, "swap/msg_chain_deactivate", nil)
+	cdc.RegisterConcrete(swap.MsgSwapInitialize{}, "swap/msg_initialize", nil)
+	cdc.RegisterConcrete(swap.MsgRedeemV2{}, "swap/msg_redeem_v2", nil)
 	cdc.RegisterConcrete(swap.MsgChainActivate{}, "swap/msg_chain_activate", nil)
-	cdc.RegisterConcrete(swap.MsgSwapInitialize{}, "swap/msg_swap_initialize", nil)
+	cdc.RegisterConcrete(swap.MsgChainDeactivate{}, "swap/msg_chain_deactivate", nil)
 
 	cdc.RegisterConcrete(multisig.MsgCreateWallet{}, "multisig/create_wallet", nil)
 	cdc.RegisterConcrete(multisig.MsgCreateTransaction{}, "multisig/create_transaction", nil)
